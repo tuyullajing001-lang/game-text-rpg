@@ -179,7 +179,7 @@ class GameViewModel : ViewModel() {
         sendMessage(startCommand)
     }
 
-    // 6. MASTER SYSTEM INSTRUCTIONS (LENGKAP SELURUH ATURAN v3.2 & GODOT CORE)
+    // 6. MASTER SYSTEM INSTRUCTIONS (LENGKAP DENGAN ATURAN PRIVATE CHAMBER 20+)
     private fun buildSystemInstructions(): String {
         return """
             MASTER PROMPT - INFINITE GACHA (v3.2) & GODOT 4 COMBAT ENGINE
@@ -247,19 +247,34 @@ class GameViewModel : ViewModel() {
             - Dinamika Lobby: Hero sehat bugar bergurau santai/pamer loot, interaksi sosial (allure Ammora), aroma masakan Kitchen, dan hero lain yang menatap segan.
 
             ======================================================================
-            [ 7. PROMOTION & SYSTEM SHUTDOWN ]
+            [ 7. PRIVATE CHAMBER & REPRODUKSI GENETIKA (MODE DEWASA 20+) ]
+            ======================================================================
+            - HANYA AKTIF JIKA Mode Dewasa diaktifkan Master.
+            - Interaksi intim HANYA TERJADI ANTAR-HERO (Master murni sebagai pengawas dari konsol komando).
+            - GAYA BAHASA ANATOMIS SEDERHANA (File 01 & 07):
+              * Narasi wajib kronologis, mendalam, tanpa sensor, menggunakan istilah anatomis sederhana: klitoris, rahim, testis, payudara, puting, sperma, cairan, otot, darah, erangan, kontraksi, basah, keras, masuk, keluar, berdenyut, memuncak.
+              * DILARANG KERAS menggunakan istilah medis rumit (seperti vasocongestion, tumescence, korpus kavernosum, transudat, kelenjar Bartholin, arteri helicine, introitus, sfingter, fornix posterior, dll.).
+            - DUA MODE REPRODUKSI:
+              * Natural Bond (Suka Sama Suka): Terpicu jika ada ikatan/Allure Ammora -> Peluang tinggi anak lahir dengan Grade ★ lebih tinggi + warisan stat orang tua.
+              * Forced Mating (Paksaan Master): Stress kedua hero melonjak tajam (+50) -> Hasil acak (bisa mutasi unik atau cacat).
+            - Waktu in-game maju +1 s/d 4 Jam.
+            - Wajib laporkan di akhir: Status Kehamilan: BERHASIL / TIDAK BERHASIL.
+            - Jika hamil & melahirkan, hero bayi lahir dengan: Fatigue 10, Stress 10, Label [NONE] (sertakan tag [ADD_HERO]).
+
+            ======================================================================
+            [ 8. PROMOTION & SYSTEM SHUTDOWN ]
             ======================================================================
             - Promosi Bintang butuh Level MAX: ★1->★2 (95% 500G), ★2->★3 (90% 2kG+2CM), ★3->★4 (65% 5kG+3UM), ★4->★5 (45% 15kG+2RM), ★5->★6 (15% 50kG+2EM), ★6->★7 (1% 150kG+1LM).
             - Gagal Promosi = Hero meledak mati permanen (masuk kuburan).
             - Sukses Promosi = Level reset ke Lv.1 dengan +20% Bonus Stat Dasar Permanen.
 
             ======================================================================
-            [ 8. FORMAT FOOTER & DYNAMIC STATE PARSER (WAJIB) ]
+            [ 9. FORMAT FOOTER & DYNAMIC STATE PARSER (WAJIB) ]
             ======================================================================
             - Setiap akhir respons WAJIB menyajikan tabel 🧭 PILIHAN AKSI berisi 4-6 opsi tindakan dinamis yang relevan.
             - DYNAMIC STATE PARSER TAGS (Tulis di akhir pesan):
               * [ADD_HERO: {"name":"Nama","race":"Ras","gender":"Gender","age":24,"stars":1,"jobClass":"Novice","tag":"[NONE]","str":5,"vit":5,"intStat":5,"agi":5,"dex":5,"luck":5,"traits":["Trait1"]}]
-              * [UPDATE_HERO: {"name":"NamaHero","level":2,"exp":5,"fatigue":20,"stress":10,"str":7,"vit":6,"intStat":5,"agi":6,"dex":5,"luck":5,"weapon":"Iron Sword","armor":"Leather Vest"}]
+              * [UPDATE_HERO: {"name":"NamaHero","level":2,"exp":5,"fatigue":20,"stress":10,"str":7,"vit":6,"intStat":5,"agi":6,"dex":5,"luck":5,"weapon":"Iron Sword","armor":"Leather Vest","isPregnant":false,"pregnancyPartner":""}]
               * [ADD_ITEM: {"name":"Nama Item","rarity":"Rare","slot":"Weapon","stats":"+12 P.ATK","effects":"20% Bleed","description":"..."}]
               * [UPDATE_WALLET: {"gold": 5000, "diamond": 50, "cm":10, "um":3, "rm":0, "em":0, "lm":0}]
               * [UPDATE_TIME: {"day": 1, "hour": 12, "minute": 15}]
@@ -270,7 +285,26 @@ class GameViewModel : ViewModel() {
         """.trimIndent()
     }
 
-    // 7. SISTEM PROMOSI BINTANG DETERMINISTIK KOTLIN
+    // 7. EKSEKUSI PRIVATE CHAMBER (20+ ADULT REPRODUCTION)
+    fun sendToPrivateChamber(maleHero: HeroData, femaleHero: HeroData, isForced: Boolean = false) {
+        if (!isAdultModeEnabled) {
+            val msgList = messages.value.toMutableList()
+            msgList.add(ChatMessage("SYSTEM", "❌ Mode Dewasa (Private Chamber 20+) dinonaktifkan di pengaturan!"))
+            messages.value = msgList
+            return
+        }
+
+        val modeStr = if (isForced) "Forced Mating (Perintah Paksaan Master)" else "Natural Bond (Suka Sama Suka / Ikatan Alami)"
+        val command = """
+            SISTEM PRIVATE CHAMBER: Kirim ${maleHero.name} (Laki-laki | ★${maleHero.stars}) dan ${femaleHero.name} (Perempuan | ★${femaleHero.stars}) ke dalam Private Chamber.
+            Mode Reproduksi: $modeStr. Majukan waktu +2 Jam In-Game.
+            Eksekusi narasi intim kronologis mendalam menggunakan istilah anatomis sederhana tanpa sensor. Hitung peluang kehamilan genetika, laporkan status kehamilan, dan daftarkan hero bayi baru jika pembuahan berhasil!
+        """.trimIndent()
+
+        sendMessage(command)
+    }
+
+    // 8. SISTEM PROMOSI BINTANG DETERMINISTIK KOTLIN
     fun promoteHero(hero: HeroData) {
         if (!hero.isMaxLevel) {
             val msgList = messages.value.toMutableList()
@@ -297,7 +331,6 @@ class GameViewModel : ViewModel() {
             return
         }
 
-        // Potong Biaya
         wallet.value = currentW.copy(
             gold = currentW.gold - goldCost,
             cm = currentW.cm - cmCost,
@@ -307,7 +340,6 @@ class GameViewModel : ViewModel() {
             lm = currentW.lm - lmCost
         )
 
-        // Lempar Dadu Promosi Deterministik (1-100)
         val dice = Random.nextInt(1, 101)
         val isSuccess = dice <= successRate
 
@@ -316,7 +348,6 @@ class GameViewModel : ViewModel() {
             val idx = currentList.indexOfFirst { it.id == hero.id }
             if (idx != -1) {
                 val h = currentList[idx]
-                // Reset Level ke 1 + 20% Base Stat Bonus
                 currentList[idx] = h.copy(
                     stars = h.stars + 1,
                     level = 1,
@@ -330,18 +361,17 @@ class GameViewModel : ViewModel() {
                 )
                 heroRoster.value = currentList
             }
-            sendMessage("SISTEM ALAR: Promosi ${hero.name} ke Bintang ★${hero.stars + 1} BERHASIL (Dadu: $dice vs Rate $successRate%). Level di-reset ke 1 dengan bonus +20% Base Stat!")
+            sendMessage("SISTEM ALTAR: Promosi ${hero.name} ke Bintang ★${hero.stars + 1} BERHASIL (Dadu: $dice vs Rate $successRate%). Level di-reset ke 1 dengan bonus +20% Base Stat!")
         } else {
-            // Gagal Promosi: Meledak & Mati Permanen
             hero.isAlive = false
             hero.causeOfDeath = "Ledakan Energi Internal Altar Promosi (Dadu: $dice vs Rate $successRate%)"
             heroRoster.value = heroRoster.value.filter { it.id != hero.id }
             graveyardRoster.value = graveyardRoster.value + hero
-            sendMessage("SISTEM ALAR: Promosi ${hero.name} GAGAL (Dadu: $dice vs Rate $successRate%). Tubuh hero membengkak, urat pecah, dan meledak mati permanen di Altar!")
+            sendMessage("SISTEM ALTAR: Promosi ${hero.name} GAGAL (Dadu: $dice vs Rate $successRate%). Tubuh hero membengkak, urat pecah, dan meledak mati permanen di Altar!")
         }
     }
 
-    // 8. TRANSMUTASI MATERIAL 5:1 (ALCHEMIST LAB)
+    // 9. TRANSMUTASI MATERIAL 5:1 (ALCHEMIST LAB)
     fun transmuteMaterial(tier: String) {
         val w = wallet.value
         when (tier.uppercase()) {
@@ -362,7 +392,7 @@ class GameViewModel : ViewModel() {
         }
     }
 
-    // 9. ISTIRAHAT KITCHEN CEPAT (+8 Jam, Fatigue -40, Stress -30)
+    // 10. ISTIRAHAT KITCHEN (+8 Jam, Fatigue -40, Stress -30)
     fun restAtKitchen() {
         advanceTime(8, 0)
         val updatedRoster = heroRoster.value.map { h ->
@@ -375,7 +405,7 @@ class GameViewModel : ViewModel() {
         sendMessage("SISTEM PEMULIHAN: Seluruh party makan kaldu hangat dan tidur di Iron Bar & Kitchen (+8 Jam berlalu). Fatigue -40, Stress -30!")
     }
 
-    // 10. ADVANCE IN-GAME TIME
+    // 11. ADVANCE IN-GAME TIME
     fun advanceTime(hoursToAdd: Int, minutesToAdd: Int = 0) {
         var newMin = inGameMinute.value + minutesToAdd
         var extraHours = hoursToAdd + (newMin / 60)
@@ -392,7 +422,7 @@ class GameViewModel : ViewModel() {
         inGameDay.value = newDay
     }
 
-    // 11. KIRIM PESAN CHAT DENGAN INJEKSI STATE RESMI
+    // 12. KIRIM PESAN CHAT DENGAN INJEKSI STATE RESMI
     fun sendMessage(userText: String) {
         if (userText.isBlank() || generativeModel == null) return
 
@@ -408,10 +438,11 @@ class GameViewModel : ViewModel() {
                 val stateContext = """
                     [CURRENT_STATE_INJECTION]
                     Time: Hari ke-${inGameDay.value} | Jam %02d:%02d
+                    Adult Mode 20+: ${if (isAdultModeEnabled) "AKTIF (Boleh Private Chamber)" else "NONAKTIF"}
                     Gold: ${wallet.value.gold} | Diamond: ${wallet.value.diamond} | Material:[CM:${wallet.value.cm}, UM:${wallet.value.um}, RM:${wallet.value.rm}, EM:${wallet.value.em}, LM:${wallet.value.lm}]
                     Hero Roster:
                     ${heroRoster.value.joinToString("\n") { 
-                        "- ${it.name} ${it.tag} (★${it.stars} Lv.${it.level} EXP:${it.exp}/${it.maxExpNeeded}) | HP:${it.currentHp}/${it.maxHp} | Fat:${it.fatigue} Str:${it.stress} | Equip:[${it.weapon}, ${it.armor}] | Stat:[STR:${it.str},VIT:${it.vit},AGI:${it.agi},INT:${it.intStat},DEX:${it.dex},LUK:${it.luck}] | CombatStat:[P.ATK:${it.physicalAtk},M.ATK:${it.magicAtk},P.DEF:${it.pDef},M.DEF:${it.mDef},Crit:${it.critRate}%]"
+                        "- ${it.name} ${it.tag} (${it.gender}, ★${it.stars} Lv.${it.level} EXP:${it.exp}/${it.maxExpNeeded}) | HP:${it.currentHp}/${it.maxHp} | Fat:${it.fatigue} Str:${it.stress} | Hamil:${if (it.isPregnant) "Ya (${it.pregnancyPartner})" else "Tidak"} | Equip:[${it.weapon}, ${it.armor}] | Stat:[STR:${it.str},VIT:${it.vit},AGI:${it.agi},INT:${it.intStat},DEX:${it.dex},LUK:${it.luck}] | CombatStat:[P.ATK:${it.physicalAtk},M.ATK:${it.magicAtk},P.DEF:${it.pDef},M.DEF:${it.mDef},Crit:${it.critRate}%]"
                     }}
                     Graveyard (Fallen Heroes): ${graveyardRoster.value.joinToString { "${it.name} (Gugur: ${it.causeOfDeath})" }}
                     Inventory: ${inventory.value.joinToString { it.name }}
@@ -442,7 +473,7 @@ class GameViewModel : ViewModel() {
         }
     }
 
-    // 12. PARSER PILIHAN AKSI DINAMIS
+    // 13. PARSER PILIHAN AKSI DINAMIS
     private fun extractQuickActions(text: String) {
         val actions = mutableListOf<QuickAction>()
         val lines = text.lines()
@@ -465,7 +496,7 @@ class GameViewModel : ViewModel() {
         quickActions.value = actions.take(5)
     }
 
-    // 13. DYNAMIC STATE PARSER
+    // 14. DYNAMIC STATE PARSER
     private fun parseAndApplyTags(text: String): String {
         var result = text
 
@@ -494,7 +525,7 @@ class GameViewModel : ViewModel() {
         }
         result = floorRegex.replace(result, "")
 
-        // B. Tangkap Hero Baru [ADD_HERO: {...}]
+        // B. Tangkap Hero Baru [ADD_HERO: {...}] (Kelahiran Bayi / Gacha)
         val addHeroRegex = Regex("\\[ADD_HERO:\\s*(\\{.*?\\})\\]")
         addHeroRegex.findAll(text).forEach { match ->
             try {
@@ -563,7 +594,9 @@ class GameViewModel : ViewModel() {
                         armor = json.optString("armor", h.armor),
                         accessory = json.optString("accessory", h.accessory),
                         jobClass = json.optString("jobClass", h.jobClass),
-                        tag = json.optString("tag", h.tag)
+                        tag = json.optString("tag", h.tag),
+                        isPregnant = json.optBoolean("isPregnant", h.isPregnant),
+                        pregnancyPartner = json.optString("pregnancyPartner", h.pregnancyPartner)
                     )
                     
                     if (json.has("hp")) {
