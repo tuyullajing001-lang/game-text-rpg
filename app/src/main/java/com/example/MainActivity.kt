@@ -6,9 +6,11 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.LocationOn
@@ -105,7 +107,7 @@ fun ApiKeySetupScreen(vm: GameViewModel) {
                     if (isConnecting) {
                         CircularProgressIndicator(modifier = Modifier.size(20.dp), color = Color.White, strokeWidth = 2.dp)
                     } else {
-                        Text("HUBUNGKAN KE AI", fontWeight = FontWeight.Bold)
+                        Text("HUBUNGKAN KE AI (GEMINI 3.7 FLASH)", fontWeight = FontWeight.Bold)
                     }
                 }
             }
@@ -187,7 +189,7 @@ fun PlayerFormScreen(vm: GameViewModel) {
 }
 
 // ==========================================
-// LAYAR 3: GAMEPLAY CLEAN CHAT & TOWER CODEX
+// LAYAR 3: GAMEPLAY CHAT, PILIHAN AKSI & HERO MANAGEMENT
 // ==========================================
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -200,6 +202,7 @@ fun GamePlayScreen(vm: GameViewModel) {
     val heroRoster by vm.heroRoster.collectAsState()
     val discoveredFloors by vm.discoveredFloors.collectAsState()
     val messages by vm.messages.collectAsState()
+    val quickActions by vm.quickActions.collectAsState()
     val isGenerating by vm.isGenerating.collectAsState()
 
     var inputText by remember { mutableStateOf("") }
@@ -237,34 +240,57 @@ fun GamePlayScreen(vm: GameViewModel) {
             )
         },
         bottomBar = {
-            // KOLOM CHAT BERSIH (FULL WIDTH)
-            Row(
-                modifier = Modifier.fillMaxWidth().background(Color(0xFF12141C)).padding(8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                OutlinedTextField(
-                    value = inputText,
-                    onValueChange = { inputText = it },
-                    placeholder = { Text("Ketik perintah Master...", color = Color.Gray, fontSize = 13.sp) },
-                    modifier = Modifier.weight(1f),
-                    colors = OutlinedTextFieldDefaults.colors(focusedTextColor = Color.White, unfocusedTextColor = Color.White),
-                    maxLines = 3
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                IconButton(
-                    onClick = {
-                        if (inputText.isNotBlank() && !isGenerating) {
-                            val textToSend = inputText
-                            inputText = ""
-                            vm.sendMessage(textToSend)
+            Column(modifier = Modifier.background(Color(0xFF12141C)).padding(8.dp)) {
+                // BILAH TOMBOL CEPAT (DARI TABEL PILIHAN AKSI AI)
+                if (quickActions.isNotEmpty()) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .horizontalScroll(rememberScrollState())
+                            .padding(bottom = 6.dp),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        quickActions.forEach { action ->
+                            SuggestionChip(
+                                onClick = {
+                                    if (!isGenerating) {
+                                        vm.sendMessage(action.command)
+                                    }
+                                },
+                                label = { Text(action.label, fontSize = 11.sp, color = Color(0xFF38BDF8)) },
+                                colors = SuggestionChipDefaults.suggestionChipColors(containerColor = Color(0xFF1E293B)),
+                                border = SuggestionChipDefaults.suggestionChipBorder(borderColor = Color(0xFF06B6D4).copy(alpha = 0.5f), enabled = true)
+                            )
                         }
-                    },
-                    modifier = Modifier.background(Color(0xFFE11D48), RoundedCornerShape(8.dp))
-                ) {
-                    if (isGenerating) {
-                        CircularProgressIndicator(modifier = Modifier.size(20.dp), color = Color.White, strokeWidth = 2.dp)
-                    } else {
-                        Icon(Icons.Default.Send, contentDescription = "Kirim", tint = Color.White)
+                    }
+                }
+
+                // INPUT CHAT MASTER
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    OutlinedTextField(
+                        value = inputText,
+                        onValueChange = { inputText = it },
+                        placeholder = { Text("Ketik perintah Master...", color = Color.Gray, fontSize = 13.sp) },
+                        modifier = Modifier.weight(1f),
+                        colors = OutlinedTextFieldDefaults.colors(focusedTextColor = Color.White, unfocusedTextColor = Color.White),
+                        maxLines = 3
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    IconButton(
+                        onClick = {
+                            if (inputText.isNotBlank() && !isGenerating) {
+                                val textToSend = inputText
+                                inputText = ""
+                                vm.sendMessage(textToSend)
+                            }
+                        },
+                        modifier = Modifier.background(Color(0xFFE11D48), RoundedCornerShape(8.dp))
+                    ) {
+                        if (isGenerating) {
+                            CircularProgressIndicator(modifier = Modifier.size(20.dp), color = Color.White, strokeWidth = 2.dp)
+                        } else {
+                            Icon(Icons.Default.Send, contentDescription = "Kirim", tint = Color.White)
+                        }
                     }
                 }
             }
