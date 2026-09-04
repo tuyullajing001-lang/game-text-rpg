@@ -252,7 +252,7 @@ class GameViewModel : ViewModel() {
             - HANYA AKTIF JIKA Mode Dewasa diaktifkan Master.
             - Interaksi intim HANYA TERJADI ANTAR-HERO (Master murni sebagai pengawas dari konsol komando).
             - GAYA BAHASA ANATOMIS SEDERHANA (File 01 & 07):
-              * Narasi wajib kronologis, mendalam, tanpa sensor, menggunakan istilah anatomis sederhana: klitoris, rahim, testis, payudara, puting, sperma, cairan, otot, darah, erangan, kontraksi, basah, keras, masuk, keluar, berdenyut, memuncak.
+              * Narasi wajib kronologis, mendalam, tanpa sensor, menggunakan istilah anatomis sederhana: klitoris, rahim, testis, payudara, puting, sperma, cairan, otot, darah, erangan, kontraksi, basah, keras, masuk, keluar, berdenyut, memuncak, dan menyertakan obrolan hero yang sedang melakukan hubungan intim.
               * DILARANG KERAS menggunakan istilah medis rumit (seperti vasocongestion, tumescence, korpus kavernosum, transudat, kelenjar Bartholin, arteri helicine, introitus, sfingter, fornix posterior, dll.).
             - DUA MODE REPRODUKSI:
               * Natural Bond (Suka Sama Suka): Terpicu jika ada ikatan/Allure Ammora -> Peluang tinggi anak lahir dengan Grade ★ lebih tinggi + warisan stat orang tua.
