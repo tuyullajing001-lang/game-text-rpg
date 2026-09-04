@@ -13,6 +13,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Menu
@@ -223,7 +224,13 @@ fun GamePlayScreen(vm: GameViewModel) {
     var showTowerIntelDialog by remember { mutableStateOf(false) }
     var showFacilitiesDialog by remember { mutableStateOf(false) }
     var showGraveyardDialog by remember { mutableStateOf(false) }
+    var showPrivateChamberDialog by remember { mutableStateOf(false) }
     var selectedHero by remember { mutableStateOf<HeroData?>(null) }
+
+    // State Pemilihan Pasangan di Private Chamber
+    var selectedMaleHero by remember { mutableStateOf<HeroData?>(null) }
+    var selectedFemaleHero by remember { mutableStateOf<HeroData?>(null) }
+    var isForcedMating by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -243,6 +250,11 @@ fun GamePlayScreen(vm: GameViewModel) {
                     }
                 },
                 actions = {
+                    if (vm.isAdultModeEnabled) {
+                        IconButton(onClick = { showPrivateChamberDialog = true }) {
+                            Icon(Icons.Default.Favorite, contentDescription = "Private Chamber 20+", tint = Color(0xFFF43F5E))
+                        }
+                    }
                     IconButton(onClick = { showFacilitiesDialog = true }) {
                         Icon(Icons.Default.Home, contentDescription = "Fasilitas Lobby", tint = Color(0xFF10B981))
                     }
@@ -333,6 +345,78 @@ fun GamePlayScreen(vm: GameViewModel) {
                 }
             }
         }
+    }
+
+    // 🔞 MODAL PRIVATE CHAMBER 20+ (REPRODUKSI & GENETIKA)
+    if (showPrivateChamberDialog) {
+        val maleHeroes = heroRoster.filter { it.gender.equals("Laki-laki", ignoreCase = true) }
+        val femaleHeroes = heroRoster.filter { it.gender.equals("Perempuan", ignoreCase = true) }
+
+        AlertDialog(
+            onDismissRequest = { showPrivateChamberDialog = false },
+            confirmButton = {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    if (selectedMaleHero != null && selectedFemaleHero != null) {
+                        Button(
+                            onClick = {
+                                vm.sendToPrivateChamber(selectedMaleHero!!, selectedFemaleHero!!, isForcedMating)
+                                showPrivateChamberDialog = false
+                            },
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFF43F5E))
+                        ) {
+                            Text("Mulai Interaksi (+2 Jam)", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 11.sp)
+                        }
+                    }
+                    TextButton(onClick = { showPrivateChamberDialog = false }) { Text("Tutup", color = Color(0xFF38BDF8)) }
+                }
+            },
+            title = { Text("🔞 PRIVATE CHAMBER (20+)", color = Color(0xFFF43F5E), fontWeight = FontWeight.Bold) },
+            text = {
+                LazyColumn(modifier = Modifier.height(360.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    item {
+                        Text("Pilih Hero Jantan & Betina untuk reproduksi genetika / ikatan intim:", color = Color.LightGray, fontSize = 11.sp)
+                    }
+
+                    item {
+                        Text("♂️ HERO LAKI-LAKI:", color = Color(0xFF38BDF8), fontWeight = FontWeight.Bold, fontSize = 11.sp)
+                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            maleHeroes.forEach { mHero ->
+                                val isSel = selectedMaleHero?.id == mHero.id
+                                Card(
+                                    modifier = Modifier.fillMaxWidth().clickable { selectedMaleHero = mHero },
+                                    colors = CardDefaults.cardColors(containerColor = if (isSel) Color(0xFF0369A1) else Color(0xFF1E293B))
+                                ) {
+                                    Text("${mHero.name} (★${mHero.stars} ${mHero.race})", color = Color.White, fontSize = 11.sp, modifier = Modifier.padding(6.dp))
+                                }
+                            }
+                        }
+                    }
+
+                    item {
+                        Text("♀️ HERO PEREMPUAN:", color = Color(0xFFF472B6), fontWeight = FontWeight.Bold, fontSize = 11.sp)
+                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            femaleHeroes.forEach { fHero ->
+                                val isSel = selectedFemaleHero?.id == fHero.id
+                                Card(
+                                    modifier = Modifier.fillMaxWidth().clickable { selectedFemaleHero = fHero },
+                                    colors = CardDefaults.cardColors(containerColor = if (isSel) Color(0xFFBE185D) else Color(0xFF1E293B))
+                                ) {
+                                    Text("${fHero.name} (★${fHero.stars} ${fHero.race})", color = Color.White, fontSize = 11.sp, modifier = Modifier.padding(6.dp))
+                                }
+                            }
+                        }
+                    }
+
+                    item {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Checkbox(checked = isForcedMating, onCheckedChange = { isForcedMating = it })
+                            Text("Paksa Kawin (Forced Mating - Stress +50)", color = Color.Yellow, fontSize = 11.sp)
+                        }
+                    }
+                }
+            },
+            containerColor = Color(0xFF12141C)
+        )
     }
 
     // 🏰 MODAL FASILITAS LOBBY
@@ -482,6 +566,9 @@ fun GamePlayScreen(vm: GameViewModel) {
                                     Text("★".repeat(hero.stars) + " Lv.${hero.level}/${hero.maxLevelForCurrentStar}", color = Color(0xFFFACC15), fontSize = 11.sp)
                                 }
                                 Text("Class: ${hero.jobClass} | Ras: ${hero.race} (Bonus Ras: %.1f%%)".format(hero.totalRacialBonus), color = Color.Gray, fontSize = 10.sp)
+                                if (hero.isPregnant) {
+                                    Text("🤰 Status: HAMIL (Pasangan: ${hero.pregnancyPartner})", color = Color(0xFFF472B6), fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                                }
                                 Spacer(modifier = Modifier.height(4.dp))
                                 Text("❤️ HP: ${hero.currentHp}/${hero.maxHp}", color = Color(0xFFF43F5E), fontSize = 11.sp)
                                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -529,6 +616,9 @@ fun GamePlayScreen(vm: GameViewModel) {
                     Text("🗡️ Equipment    : ${hero.weapon} | 🛡️ ${hero.armor}", color = Color.LightGray, fontSize = 10.sp)
                     if (hero.specialTraits.isNotEmpty()) {
                         Text("🧬 Trait: ${hero.specialTraits.joinToString()}", color = Color(0xFF06B6D4), fontSize = 10.sp)
+                    }
+                    if (hero.isPregnant) {
+                        Text("🤰 Kehamilan: Sedang mengandung keturunan dari ${hero.pregnancyPartner}", color = Color(0xFFF472B6), fontSize = 11.sp)
                     }
                     if (hero.isMaxLevel) {
                         Spacer(modifier = Modifier.height(4.dp))
