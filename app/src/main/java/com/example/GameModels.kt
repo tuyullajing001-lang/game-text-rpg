@@ -44,7 +44,7 @@ data class HeroData(
     val id: String,
     val name: String,
     val race: String = "Manusia",
-    val gender: String = "Laki-laki",
+    val gender: String = "Laki-laki", // Laki-laki / Perempuan
     val age: Int = 20,
     var stars: Int = 1,
     var level: Int = 1,
@@ -59,6 +59,10 @@ data class HeroData(
     var stress: Int = 0,  // 0 - 100
     var isAlive: Boolean = true,
     var causeOfDeath: String = "",
+    
+    // Status Reproduksi Private Chamber
+    var isPregnant: Boolean = false,
+    var pregnancyPartner: String = "",
     
     // 6 Stat Mentah Dasar
     var str: Int = 5,
@@ -82,10 +86,8 @@ data class HeroData(
     var bossKill: Int = 0,
     var highestFloor: Int = 1
 ) {
-    // Total Ras Multiplier (Capped 100%)
     val totalRacialBonus: Double get() = (bonusRasBawaanPercent + bonusRasEkstraPercent).coerceAtMost(100.0)
 
-    // Formula Stat Tempur Godot Engine 4.6 (Deterministik)
     val maxHp: Int get() = 100 + (vit * 100)
     val maxStamina: Int get() = 50 + (str * 3) + (vit * 2)
     val maxMana: Int get() = 50 + (intStat * 4)
@@ -101,10 +103,8 @@ data class HeroData(
     val dodgeRate: Double get() = agi * 0.1
     val combatSpeed: Int get() = agi * 1
 
-    // Threshold EXP Level Up (Formula: Level * 10 * Stars)
     val maxExpNeeded: Int get() = level * 10 * stars
 
-    // Batas Level Max Per Grade Bintang (File 02)
     val maxLevelForCurrentStar: Int get() = when (stars) {
         1 -> 10
         2 -> 20
