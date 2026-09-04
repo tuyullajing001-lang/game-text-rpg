@@ -1,0 +1,6 @@
+{
+  "name": "Infinite Gacha",
+  "description": "Game Text AI RPG dinamis dan interaktif berbasis Gemini AI dengan sistem Gacha, Fatigue, Stress, Fasilitas Lobby, dan Ekspedisi Menara Mobius.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
