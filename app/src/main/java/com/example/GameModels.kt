@@ -12,7 +12,7 @@ data class ItemData(
     val id: String,
     val name: String,
     val rarity: Rarity = Rarity.COMMON,
-    val slotType: String = "Weapon", // Weapon, Armor, Accessory, Consumable
+    val slotType: String = "Weapon", // Weapon, Armor, Accessory, Consumable, Material
     val statsText: String = "",
     val effectsText: String = "",
     val description: String = "",
@@ -22,7 +22,7 @@ data class ItemData(
 data class FloorData(
     val floorNumber: Int,
     val title: String,
-    val objectiveType: String = "Bebas", // Annihilation, Survival, Defense, Sabotage, Escort, Maze, dll.
+    val objectiveType: String = "Bebas",
     val clearCondition: String = "Selesaikan Objektif Utama",
     val failCondition: String = "Seluruh Party Gugur (HP 0)",
     val terrainHazard: String = "Normal",
@@ -32,31 +32,45 @@ data class FloorData(
     val isBossFloor: Boolean = false
 )
 
+data class FacilityData(
+    val name: String,
+    val level: Int = 1,
+    val assignedWorkers: List<String> = emptyList(),
+    val maxCapacity: Int = 2,
+    val description: String
+)
+
 data class HeroData(
     val id: String,
     val name: String,
     val race: String = "Manusia",
     val gender: String = "Laki-laki",
     val age: Int = 20,
-    val stars: Int = 2,
+    var stars: Int = 1,
     var level: Int = 1,
     var exp: Int = 0,
     var jobClass: String = "Novice",
+    var classExp: Int = 0,
     var tag: String = "[NONE]",
     
-    // Status Dinamis
-    var currentHp: Int = 1000,
-    var maxHp: Int = 1000,
+    // Status Vitalitas & Beban
+    var currentHp: Int = -1,
     var fatigue: Int = 0, // 0 - 100
     var stress: Int = 0,  // 0 - 100
+    var isAlive: Boolean = true,
+    var causeOfDeath: String = "",
     
-    // Stat Mentah Dinamis (Godot 4 Engine)
-    var str: Int = 6,
-    var vit: Int = 6,
-    var intStat: Int = 6,
-    var agi: Int = 6,
-    var dex: Int = 6,
-    var luck: Int = 6,
+    // 6 Stat Mentah Dasar
+    var str: Int = 5,
+    var vit: Int = 5,
+    var intStat: Int = 5,
+    var agi: Int = 5,
+    var dex: Int = 5,
+    var luck: Int = 5,
+    
+    // Limit Break Persentase Ras (Godot Core - Max 100%)
+    var bonusRasBawaanPercent: Double = 5.0,
+    var bonusRasEkstraPercent: Double = 0.0,
     
     // Equipment Terpasang
     var weapon: String = "Tanpa Senjata",
@@ -68,12 +82,46 @@ data class HeroData(
     var bossKill: Int = 0,
     var highestFloor: Int = 1
 ) {
+    // Total Ras Multiplier (Capped 100%)
+    val totalRacialBonus: Double get() = (bonusRasBawaanPercent + bonusRasEkstraPercent).coerceAtMost(100.0)
+
+    // Formula Stat Tempur Godot Engine 4.6 (Deterministik)
+    val maxHp: Int get() = 100 + (vit * 100)
+    val maxStamina: Int get() = 50 + (str * 3) + (vit * 2)
+    val maxMana: Int get() = 50 + (intStat * 4)
+    val maxStress: Int get() = 100 + (intStat * 3) + (vit * 1)
+
     val physicalAtk: Int get() = (str * 5) + (dex * 1) + (agi * 1)
     val magicAtk: Int get() = (intStat * 5) + (dex * 2)
     val pDef: Int get() = vit * 3
     val mDef: Int get() = (intStat * 2) + (vit * 1)
     val critRate: Double get() = (dex * 0.1) + (luck * 1.0)
+    val critDmg: Double get() = 150.0
+    val accuracy: Double get() = 100.0 + (dex * 0.5) + (luck * 0.8)
+    val dodgeRate: Double get() = agi * 0.1
+    val combatSpeed: Int get() = agi * 1
+
+    // Threshold EXP Level Up (Formula: Level * 10 * Stars)
     val maxExpNeeded: Int get() = level * 10 * stars
+
+    // Batas Level Max Per Grade Bintang (File 02)
+    val maxLevelForCurrentStar: Int get() = when (stars) {
+        1 -> 10
+        2 -> 20
+        3 -> 30
+        4 -> 50
+        5 -> 70
+        6 -> 85
+        else -> 100
+    }
+
+    val isMaxLevel: Boolean get() = level >= maxLevelForCurrentStar
+
+    init {
+        if (currentHp <= 0 || currentHp > maxHp) {
+            currentHp = maxHp
+        }
+    }
 }
 
 data class WalletData(
