@@ -17,7 +17,7 @@ enum class GameStage {
 
 class GameViewModel : ViewModel() {
 
-    // 1. STAGE FLOW GAME
+    // 1. TAHAP ALUR PERMAINAN
     val currentStage = MutableStateFlow(GameStage.API_KEY_SETUP)
     val connectionError = MutableStateFlow<String?>(null)
     val isConnecting = MutableStateFlow(false)
@@ -42,15 +42,16 @@ class GameViewModel : ViewModel() {
     val heroRoster = MutableStateFlow<List<HeroData>>(emptyList())
     val discoveredFloors = MutableStateFlow<Map<Int, FloorData>>(emptyMap())
     val messages = MutableStateFlow<List<ChatMessage>>(emptyList())
+    val quickActions = MutableStateFlow<List<QuickAction>>(emptyList())
     val isGenerating = MutableStateFlow(false)
 
-    // Form Player
+    // Parameter Formulir Player
     var masterName: String = "Ammora"
     var lobbyName: String = "Niflheim"
     var assistantName: String = "Ysel"
     var difficulty: String = "Abyssal"
 
-    // Form Custom Hero
+    // Parameter Formulir Custom Hero
     var isCustomHeroActive: Boolean = false
     var customHeroName: String = "Ammora"
     var customHeroRace: String = "Manusia"
@@ -91,7 +92,7 @@ class GameViewModel : ViewModel() {
         }
     }
 
-    // 4. SUBMIT FORM PLAYER
+    // 4. SUBMIT FORM PLAYER & INISIASI 5X GACHA TUTORIAL
     fun submitPlayerForm() {
         val isSecretAmmora = isCustomHeroActive &&
                 masterName.equals("Ammora", ignoreCase = true) &&
@@ -119,36 +120,43 @@ class GameViewModel : ViewModel() {
         sendMessage(startCommand)
     }
 
-    // 5. MASTER SYSTEM INSTRUCTIONS (AUTONOMOUS CHRONICLER + SEAMLESS LOCKING)
+    // 5. MASTER SYSTEM INSTRUCTIONS
     private fun buildSystemInstructions(): String {
         return """
             MASTER PROMPT - INFINITE GACHA (v3.2) & GODOT 4 COMBAT ENGINE
-            1. BAHASA & GAYA CERITA:
-               - Bahasa Indonesia natural, narasi gelap/realistis, tanpa plot armor kecuali trait MC.
-               - Pemain murni berperan sebagai Master di ruang komando. Peri ($assistantName) menyampaikan komando fisik.
             
-            2. CHRONICLER AUTO-COMBAT & OTONOMI HERO:
-               - Hero bertarung OTOMATIS layaknya orang asli berdasarkan Stat, Skill, Fatigue, dan Stress mereka.
-               - Healer memutuskan sendiri kapan menyembuhkan, Tanker pasang badan, hero panik (Stress >= 60) bisa salah langkah.
-               - BLIND ENTRY & PENGUNCIAN LANTAI SEAMLESS:
-                 Saat lantai baru dimasuki pertama kali, AI melempar dadu generate rincian misi dan WAJIB menguncinya di akhir pesan:
+            1. GAYA PENULISAN NOVEL / KOMIK SCRIPT (STRICT NOVEL FORMAT):
+               - Narasi bergaya Webtoon / Light Novel fantasi gelap yang imersif dan hidup.
+               - WAJIB MEMISAHKAN DIALOG DENGAN NAMA JELAS:
+                 * Dialog Hero WAJIB diawali dengan Nama Hero yang berbicara:
+                   Contoh:
+                   Ammora: "Kalimat percakapan..."
+                   Lyra: *(Menarik busurnya waspada)* "Balasan percakapan..."
+                 * Narasi Deskriptif ditulis dalam paragraf terpisah untuk menggambarkan suasana, tebasan pedang, cipratan darah, luka fisik anatomis, dan aksi hero.
+               - Hero berbicara dan bertindak otonom sesuai kepribadian, luka fisik, Fatigue, dan Stress mereka.
+
+            2. MEKANIK TOWER, QUEST LOCKING & FITUR SKIP GRINDING:
+               - LANTAI BARU (BLIND ENTRY): Setiap lantai baru di-generate acak (Tipe: Annihilation, Survival, Defense, atau Maze) beserta bahaya medan dan komposisi monster. AI WAJIB menguncinya di akhir pesan dengan tag:
                  [LOCK_FLOOR: {"floor":1, "title":"Nama Area", "objective":"Annihilation", "hazard":"Bahaya Medan", "enemies":"Daftar Monster", "time":"4 Jam", "isBoss":false}]
-               - REPEAT CLEAR: Jika mengulang lantai yang sudah terkunci, jenis monster & medan 100% SAMA (EXP dipotong 50%).
+               - REPEAT CLEAR (GRINDING): Jika mengulang lantai yang sudah terkunci, jenis monster & medan 100% SAMA (EXP dipotong 50%).
+               - FITUR SKIP GRINDING: Jika Master memerintahkan "Skip Grinding / Auto-Grinding", AI LANGSUNG menyajikan Laporan Hasil Akhir Simulasi (Durasi Waktu, EXP, Level Up, Loot Item, dan perubahan HP/Fatigue/Stress) tanpa narasi cerita panjang!
                - TRAUMA REACTION: Jika 1 hero mati di pertempuran, Stress seluruh rekan yang masih hidup LANGSUNG +30 poin instan.
-            
-            3. DYNAMIC STATE PARSER:
-               Setiap ada perubahan, sertakan tag di paling akhir pesan:
+
+            3. FORMAT FOOTER WAJIB (🧭 PILIHAN AKSI):
+               Di setiap akhir respons, AI WAJIB menyajikan tabel 🧭 PILIHAN AKSI berisi 4-6 opsi tindakan dinamis yang relevan dengan situasi saat ini.
+
+            4. DYNAMIC STATE PARSER (WAJIB DI AKHIR PESAN):
                - [ADD_HERO: {"name":"Nama","race":"Ras","gender":"Gender","age":24,"stars":2,"jobClass":"Novice","tag":"[NONE]","hp":1200,"str":8,"vit":8,"intStat":6,"agi":7,"dex":6,"luck":6,"traits":["Trait1"]}]
                - [UPDATE_HERO: {"name":"NamaHero","level":2,"exp":15,"hp":1300,"maxHp":1300,"fatigue":20,"stress":10,"str":10,"vit":9,"intStat":6,"agi":8,"dex":7,"luck":6,"weapon":"Iron Sword","armor":"Leather Vest"}]
                - [ADD_ITEM: {"name":"Nama Item","rarity":"Rare","slot":"Weapon","stats":"+12 P.ATK","effects":"20% Bleed","description":"..."}]
                - [UPDATE_WALLET: {"gold": 5000, "diamond": 50}]
                - [LOCK_FLOOR: {"floor": 1, "title": "Nama Area", "objective": "Annihilation", "hazard": "...", "enemies": "...", "time": "4 Jam", "isBoss": false}]
             
-            4. TINGKAT KESULITAN: $difficulty Mode aktif.
+            5. TINGKAT KESULITAN: $difficulty Mode aktif.
         """.trimIndent()
     }
 
-    // 6. KIRIM PESAN DENGAN INJEKSI STATE HERO, INVENTORY & INTEL TOWER
+    // 6. KIRIM PESAN CHAT DENGAN INJEKSI STATE RESMI
     fun sendMessage(userText: String) {
         if (userText.isBlank() || generativeModel == null) return
 
@@ -180,6 +188,7 @@ class GameViewModel : ViewModel() {
                 val rawResponseText = response.text ?: "..."
 
                 val cleanedText = parseAndApplyTags(rawResponseText)
+                extractQuickActions(cleanedText)
 
                 val finalMessages = messages.value.toMutableList()
                 finalMessages.add(ChatMessage(sender = "AI", text = cleanedText))
@@ -195,7 +204,32 @@ class GameViewModel : ViewModel() {
         }
     }
 
-    // 7. DYNAMIC STATE PARSER
+    // 7. PARSER PILIHAN AKSI DINAMIS (MEMBUAT TOMBOL CEPAT DI UI)
+    private fun extractQuickActions(text: String) {
+        val actions = mutableListOf<QuickAction>()
+        val lines = text.lines()
+        val tableRowRegex = Regex("""\|\s*\*\*\[?(\d+)\]?\*\*\s*\|\s*`?([^`|]+)`?\s*\|\s*([^|]+)\|""")
+        
+        for (line in lines) {
+            val match = tableRowRegex.find(line)
+            if (match != null) {
+                val command = match.groupValues[2].trim()
+                val desc = match.groupValues[3].trim()
+                actions.add(QuickAction(label = command, command = command))
+            }
+        }
+
+        // Fallback tombol default jika tabel tidak terdeteksi
+        if (actions.isEmpty()) {
+            actions.add(QuickAction("Buka Hero Management", "Buka menu Hero Management dan periksa status hero."))
+            actions.add(QuickAction("Bentuk Party Lantai 1", "Bentuk party ekspedisi untuk masuk ke Lantai 1."))
+            actions.add(QuickAction("Istirahat di Kitchen", "Kirim party istirahat di Kitchen untuk pemulihan stamina."))
+        }
+
+        quickActions.value = actions.take(5)
+    }
+
+    // 8. DYNAMIC STATE PARSER
     private fun parseAndApplyTags(text: String): String {
         var result = text
 
