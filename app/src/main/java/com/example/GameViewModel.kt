@@ -17,7 +17,7 @@ enum class GameStage {
 
 class GameViewModel : ViewModel() {
 
-    // 1. STAGE FLOW GAME
+    // 1. TAHAP ALUR PERMAINAN
     val currentStage = MutableStateFlow(GameStage.API_KEY_SETUP)
     val connectionError = MutableStateFlow<String?>(null)
     val isConnecting = MutableStateFlow(false)
@@ -27,18 +27,29 @@ class GameViewModel : ViewModel() {
     val inGameDay = MutableStateFlow(1)
     val inGameHour = MutableStateFlow(8)
     val inGameMinute = MutableStateFlow(0)
-    val inventory = MutableStateFlow<List<ItemData>>(emptyList())
+    val inventory = MutableStateFlow<List<ItemData>>(
+        listOf(
+            ItemData(
+                id = UUID.randomUUID().toString(),
+                name = "Soul Stabilizer",
+                rarity = Rarity.COMMON,
+                slotType = "Consumable",
+                effectsText = "-25 Stress Instan",
+                description = "Menstabilkan fluktuasi jiwa hero."
+            )
+        )
+    )
     val heroRoster = MutableStateFlow<List<HeroData>>(emptyList())
     val messages = MutableStateFlow<List<ChatMessage>>(emptyList())
     val isGenerating = MutableStateFlow(false)
 
-    // Form Player
+    // Parameter Formulir Player
     var masterName: String = "Ammora"
     var lobbyName: String = "Niflheim"
     var assistantName: String = "Ysel"
     var difficulty: String = "Abyssal"
 
-    // Form Custom Hero
+    // Parameter Formulir Custom Hero
     var isCustomHeroActive: Boolean = false
     var customHeroName: String = "Ammora"
     var customHeroRace: String = "Manusia"
@@ -47,8 +58,8 @@ class GameViewModel : ViewModel() {
 
     private var generativeModel: GenerativeModel? = null
 
-    // 3. TES & HUBUNGKAN KE GEMINI API (WAJIB BERHASIL SEBELUM BISA MULAI)
-    fun testAndConnectApi(apiKey: String, modelName: String = "gemini-2.5-flash") {
+    // 3. VALIDASI & KONEKSI KE GEMINI API MENGGUNAKAN GEMINI 3.7 FLASH
+    fun testAndConnectApi(apiKey: String, modelName: String = "gemini-3.7-flash") {
         if (apiKey.isBlank()) {
             connectionError.value = "API Key tidak boleh kosong!"
             return
@@ -63,7 +74,7 @@ class GameViewModel : ViewModel() {
                     modelName = modelName,
                     apiKey = apiKey
                 )
-                // Ping tes koneksi
+                // Ping tes koneksi ringan
                 val testPing = tempModel.generateContent("Ketik 'OK' jika terhubung.")
                 if (testPing.text != null) {
                     generativeModel = GenerativeModel(
@@ -71,31 +82,31 @@ class GameViewModel : ViewModel() {
                         apiKey = apiKey,
                         systemInstruction = content { text(buildSystemInstructions()) }
                     )
-                    // Pindah ke formulir pengisian data player
+                    // Pindah ke formulir data player setelah sukses
                     currentStage.value = GameStage.PLAYER_FORM
                 } else {
-                    connectionError.value = "Gagal mendapatkan respon dari AI."
+                    connectionError.value = "Gagal mendapatkan respon dari server Google AI Studio."
                 }
             } catch (e: Exception) {
-                connectionError.value = "Koneksi Gagal: ${e.localizedMessage}"
+                connectionError.value = "Koneksi Gagal (Error): ${e.localizedMessage}"
             } finally {
                 isConnecting.value = false
             }
         }
     }
 
-    // 4. SUBMIT FORMULIR PLAYER & JALANKAN TUTORIAL GACHA 5X
+    // 4. SUBMIT FORMULIR PLAYER & INISIASI 5X GACHA DIAMOND TUTORIAL
     fun submitPlayerForm() {
-        // Cek Secret Custom Hero Condition
+        // Pengecekan Syarat Rahasia Hero Ammora
         val isSecretAmmora = isCustomHeroActive &&
                 masterName.equals("Ammora", ignoreCase = true) &&
                 customHeroName.equals("Ammora", ignoreCase = true)
 
-        val customHeroPromptPart = if (isCustomHeroActive) {
+        val customHeroPromptRule = if (isCustomHeroActive) {
             if (isSecretAmmora) {
-                "Slot 1 DIJAMIN MUTLAK adalah Secret Hero Ammora (Nama: Ammora, Ras: $customHeroRace, Gender: $customHeroGender, Usia: $customHeroAge, Grade: ★2 Lv.1, Class: Novice, Trait: [Reduksi Beban 90%, Harem Allure Logis 90%, Plot Armor 90%], Tag: [CORE]). Sisa 4 hero di-roll acak."
+                "Slot 1 DIJAMIN MUTLAK adalah Secret Hero Ammora (Nama: Ammora, Ras: $customHeroRace, Gender: $customHeroGender, Usia: $customHeroAge, Grade: ★2 Lv.1, Class: Novice [Tier F], Stat: STR 8, VIT 8, AGI 7, INT 6, DEX 6, LUK 6, HP: 1500, Tag: [CORE], Trait Rahasia: [Reduksi Beban Stamina & Mental 90%, Harem Allure Logis 90%, Plot Armor Narasi 90%]). 4 hero lainnya di-roll murni acak."
             } else {
-                "Slot 1 DIJAMIN MUTLAK adalah Custom Hero (Nama: $customHeroName, Ras: $customHeroRace, Gender: $customHeroGender, Usia: $customHeroAge, Grade: ★2 Lv.1). Sisa 4 hero di-roll acak."
+                "Slot 1 DIJAMIN MUTLAK adalah Custom Hero (Nama: $customHeroName, Ras: $customHeroRace, Gender: $customHeroGender, Usia: $customHeroAge, Grade: ★2 Lv.1, Class: Novice, HP: 1000). 4 hero lainnya di-roll murni acak."
             }
         } else {
             "Seluruh 5 hero di-roll murni acak via RNG 1-1000 Diamond Summon."
@@ -103,32 +114,40 @@ class GameViewModel : ViewModel() {
 
         currentStage.value = GameStage.IN_GAME
 
-        // Trigger AI untuk eksekusi 5x Gacha Tutorial dan Pengenalan
+        // Perintah inisiasi awal ke AI
         val startCommand = """
             Sistem Inisiasi: Buka gerbang dimensi Mobius untuk Master $masterName di Lobby $lobbyName. 
-            Jalankan 5x Summon Diamond Tutorial Gratis. Aturan: $customHeroPromptPart
-            Narasikan pilar cahaya pemanggilan dan laporkan 5 hero yang lahir.
+            Jalankan 5x Summon Diamond Tutorial Gratis di Altar Gacha. 
+            Aturan Pemanggilan: $customHeroPromptRule
+            Tampilkan narasi pilar cahaya pemanggilan dan rincian 5 hero yang lahir lengkap dengan tag [ADD_HERO].
         """.trimIndent()
 
         sendMessage(startCommand)
     }
 
+    // 5. MASTER SYSTEM INSTRUCTIONS
     private fun buildSystemInstructions(): String {
         return """
             MASTER PROMPT - INFINITE GACHA (v3.2) & GODOT 4 COMBAT ENGINE
-            1. Bahasa Indonesia natural, narasi gelap/realistis, tanpa plot armor kecuali trait MC.
-            2. Pemain berperan sebagai Master di konsol, Peri ($assistantName) menyampaikan komando fisik.
+            1. BAHASA & GAYA CERITA:
+               - Semua narasi, dialog, dan deskripsi pertarungan WAJIB menggunakan Bahasa Indonesia yang natural, mendalam, gelap, dan realistis (tanpa sensor luka anatomi).
+               - Pemain murni berperan sebagai Master di ruang komando. Peri ($assistantName) yang menyampaikan komando fisik di Lobby.
+            
+            2. ATURAN 5X SUMMON DIAMOND TUTORIAL:
+               - Rate Diamond Summon (RNG 1-1000): ★2 (85%), ★3 (10%), ★4 (4%), ★5 (0.9%), ★6 (0.1%).
+            
             3. DYNAMIC HERO MANAGEMENT & INVENTORY STATE PARSER:
-               Setiap kali ada perubahan status hero (naik level, exp bertambah, stat naik, ganti equipment, luka/fatigue/stress), hero baru lahir, item baru didapat, atau uang berubah, WAJIB tuliskan tag di bagian paling akhir pesan:
+               Setiap kali ada hero baru lahir, item baru didapat, status hero berubah (naik level, exp bertambah, stat naik, ganti equipment, luka/fatigue/stress), atau uang berubah, WAJIB tuliskan tag di bagian paling akhir pesan:
                - [ADD_HERO: {"name":"Nama","race":"Ras","gender":"Gender","age":24,"stars":2,"jobClass":"Novice","tag":"[NONE]","hp":1200,"str":8,"vit":8,"intStat":6,"agi":7,"dex":6,"luck":6,"traits":["Trait1"]}]
                - [UPDATE_HERO: {"name":"NamaHero","level":2,"exp":15,"hp":1300,"maxHp":1300,"fatigue":20,"stress":10,"str":10,"vit":9,"intStat":6,"agi":8,"dex":7,"luck":6,"weapon":"Iron Sword","armor":"Leather Vest"}]
                - [ADD_ITEM: {"name":"Nama Item","rarity":"Rare","slot":"Weapon","stats":"+12 P.ATK","effects":"20% Bleed","description":"..."}]
                - [UPDATE_WALLET: {"gold": 5000, "diamond": 50}]
-            4. Kesulitan: $difficulty Mode aktif.
+            
+            4. TINGKAT KESULITAN: $difficulty Mode aktif.
         """.trimIndent()
     }
 
-    // 5. KIRIM PESAN CHAT DENGAN INJEKSI STATE HERO & INVENTORY DINAMIS
+    // 6. KIRIM PESAN DENGAN INJEKSI STATE HERO & INVENTORY RESMI (ANTI-HALU)
     fun sendMessage(userText: String) {
         if (userText.isBlank() || generativeModel == null) return
 
@@ -141,6 +160,7 @@ class GameViewModel : ViewModel() {
 
         viewModelScope.launch {
             try {
+                // Injeksi Catatan State Resmi di Belakang Layar
                 val stateContext = """
                     [CURRENT_HERO_MANAGEMENT_STATE]
                     Gold: ${wallet.value.gold} | Diamond: ${wallet.value.diamond}
@@ -171,7 +191,7 @@ class GameViewModel : ViewModel() {
         }
     }
 
-    // 6. DYNAMIC STATE PARSER (HERO MANAGEMENT, INVENTORY & WALLET)
+    // 7. PARSER TAG DINAMIS (HERO MANAGEMENT, INVENTORY & WALLET)
     private fun parseAndApplyTags(text: String): String {
         var result = text
 
