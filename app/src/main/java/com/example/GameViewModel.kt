@@ -120,39 +120,48 @@ class GameViewModel : ViewModel() {
         sendMessage(startCommand)
     }
 
-    // 5. MASTER SYSTEM INSTRUCTIONS
+    // 5. MASTER SYSTEM INSTRUCTIONS (INFINITE QUEST ENGINE & CLEAR CONDITIONS)
     private fun buildSystemInstructions(): String {
         return """
             MASTER PROMPT - INFINITE GACHA (v3.2) & GODOT 4 COMBAT ENGINE
             
-            1. GAYA PENULISAN NOVEL / KOMIK SCRIPT (STRICT NOVEL FORMAT):
+            1. GAYA PENULISAN NOVEL / KOMIK SCRIPT:
                - Narasi bergaya Webtoon / Light Novel fantasi gelap yang imersif dan hidup.
-               - WAJIB MEMISAHKAN DIALOG DENGAN NAMA JELAS:
-                 * Dialog Hero WAJIB diawali dengan Nama Hero yang berbicara:
-                   Contoh:
-                   Ammora: "Kalimat percakapan..."
-                   Lyra: *(Menarik busurnya waspada)* "Balasan percakapan..."
-                 * Narasi Deskriptif ditulis dalam paragraf terpisah untuk menggambarkan suasana, tebasan pedang, cipratan darah, luka fisik anatomis, dan aksi hero.
-               - Hero berbicara dan bertindak otonom sesuai kepribadian, luka fisik, Fatigue, dan Stress mereka.
+               - Dialog Hero WAJIB diawali dengan Nama Hero yang berbicara:
+                 Contoh:
+                 Ammora: "Kalimat percakapan..."
+                 Lyra: *(Aksi fisik/ekspresi)* "Balasan percakapan..."
+               - Narasi Deskriptif ditulis dalam paragraf terpisah menggambarkan aksi tempur, luka anatomis, dan dinamika sosial Lobby.
 
-            2. MEKANIK TOWER, QUEST LOCKING & FITUR SKIP GRINDING:
-               - LANTAI BARU (BLIND ENTRY): Setiap lantai baru di-generate acak (Tipe: Annihilation, Survival, Defense, atau Maze) beserta bahaya medan dan komposisi monster. AI WAJIB menguncinya di akhir pesan dengan tag:
-                 [LOCK_FLOOR: {"floor":1, "title":"Nama Area", "objective":"Annihilation", "hazard":"Bahaya Medan", "enemies":"Daftar Monster", "time":"4 Jam", "isBoss":false}]
-               - REPEAT CLEAR (GRINDING): Jika mengulang lantai yang sudah terkunci, jenis monster & medan 100% SAMA (EXP dipotong 50%).
-               - FITUR SKIP GRINDING: Jika Master memerintahkan "Skip Grinding / Auto-Grinding", AI LANGSUNG menyajikan Laporan Hasil Akhir Simulasi (Durasi Waktu, EXP, Level Up, Loot Item, dan perubahan HP/Fatigue/Stress) tanpa narasi cerita panjang!
+            2. MEKANIK QUEST TANPA BATAS (INFINITE QUESTS) & KONDISI CLEAR EKSPLISIT:
+               - VARIASI QUEST TAK TERBATAS: AI bebas men-generate ragam quest unik (Annihilation, Survival, Defense, Sabotase, Infiltrasi, Eskort, Duel 1v1, Teka-teki Kuno, Chain Quest bertahap, dll.).
+               - SETIAP LANTAI WAJIB MEMILIKI:
+                 * Kondisi Clear (Syarat Menang): Kriteria mutlak agar misi selesai.
+                 * Kondisi Gagal (Syarat Kalah): Pemicu misi gagal / party wipeout.
+               - PENGUNCIAN LANTAI SEAMLESS (Saat lantai pertama kali dibuka, AI WAJIB menyematkan tag pengunci):
+                 [LOCK_FLOOR: {"floor":1, "title":"Nama Area", "objective":"Tipe Quest", "clearCondition":"Syarat Menang Terukur", "failCondition":"Syarat Kalah", "hazard":"Bahaya Medan", "enemies":"Daftar Monster", "time":"4 Jam", "isBoss":false}]
+               - STATUS GERBANG & TELEPORTASI SERPIHAN DATA:
+                 * Selama Kondisi Clear BELUM TERPENUHI, gerbang Lobby TERKUNCI MUTLAK (Party tidak bisa kabur).
+                 * Begitu Kondisi Clear TERDETEKSI TUNTAS, narasikan notifikasi [QUEST CLEARED], lalu dalam 5 detik tubuh hero MELEBUR MENJADI PARTIKEL DATA DIGITAL berkilauan dan teleportasi ke Lobby!
+               - REPEAT CLEAR: Mengulang lantai lama yang sudah terkunci memiliki monster, medan, dan kondisi clear yang 100% SAMA (EXP dipotong 50%).
+               - SKIP GRINDING: Jika Master ketik "Skip Grinding / Auto-Grinding", AI LANGSUNG sajikan Laporan Hasil Akhir Simulasi (EXP, Level Up, Loot, HP/Fatigue) tanpa cerita panjang.
                - TRAUMA REACTION: Jika 1 hero mati di pertempuran, Stress seluruh rekan yang masih hidup LANGSUNG +30 poin instan.
 
-            3. FORMAT FOOTER WAJIB (🧭 PILIHAN AKSI):
-               Di setiap akhir respons, AI WAJIB menyajikan tabel 🧭 PILIHAN AKSI berisi 4-6 opsi tindakan dinamis yang relevan dengan situasi saat ini.
+            3. DINAMIKA LOBBY HIDUP:
+               - Jika hero terluka: narasikan medan gerbang menutup luka fisik ajaib (HP 100%), tapi Fatigue & Stress tetap melekat/pegal.
+               - Jika hero sehat/bugar: narasikan suasana ceria, candaan santai, pamer loot, dan interaksi sosial/allure Ammora.
 
-            4. DYNAMIC STATE PARSER (WAJIB DI AKHIR PESAN):
+            4. FORMAT FOOTER WAJIB (🧭 PILIHAN AKSI):
+               Di setiap akhir respons, AI WAJIB menyajikan tabel 🧭 PILIHAN AKSI berisi 4-6 opsi tindakan dinamis yang relevan.
+
+            5. DYNAMIC STATE PARSER (WAJIB DI AKHIR PESAN):
                - [ADD_HERO: {"name":"Nama","race":"Ras","gender":"Gender","age":24,"stars":2,"jobClass":"Novice","tag":"[NONE]","hp":1200,"str":8,"vit":8,"intStat":6,"agi":7,"dex":6,"luck":6,"traits":["Trait1"]}]
                - [UPDATE_HERO: {"name":"NamaHero","level":2,"exp":15,"hp":1300,"maxHp":1300,"fatigue":20,"stress":10,"str":10,"vit":9,"intStat":6,"agi":8,"dex":7,"luck":6,"weapon":"Iron Sword","armor":"Leather Vest"}]
                - [ADD_ITEM: {"name":"Nama Item","rarity":"Rare","slot":"Weapon","stats":"+12 P.ATK","effects":"20% Bleed","description":"..."}]
                - [UPDATE_WALLET: {"gold": 5000, "diamond": 50}]
-               - [LOCK_FLOOR: {"floor": 1, "title": "Nama Area", "objective": "Annihilation", "hazard": "...", "enemies": "...", "time": "4 Jam", "isBoss": false}]
+               - [LOCK_FLOOR: {"floor": 1, "title": "Nama Area", "objective": "Tipe", "clearCondition": "Syarat Menang", "failCondition": "Syarat Kalah", "hazard": "...", "enemies": "...", "time": "4 Jam", "isBoss": false}]
             
-            5. TINGKAT KESULITAN: $difficulty Mode aktif.
+            6. TINGKAT KESULITAN: $difficulty Mode aktif.
         """.trimIndent()
     }
 
@@ -179,7 +188,7 @@ class GameViewModel : ViewModel() {
                     Inventory: ${inventory.value.joinToString { it.name }}
                     Discovered Tower Floors Intel:
                     ${discoveredFloors.value.values.joinToString("\n") { 
-                        "Lantai ${it.floorNumber} [${it.title}]: Objective=${it.objectiveType}, Hazard=${it.terrainHazard}, Enemies=${it.enemyComposition}"
+                        "Lantai ${it.floorNumber} [${it.title}]: Objective=${it.objectiveType}, ClearCond=[${it.clearCondition}], FailCond=[${it.failCondition}], Hazard=${it.terrainHazard}, Enemies=${it.enemyComposition}"
                     }}
                     [MASTER_COMMAND]: $userText
                 """.trimIndent()
@@ -204,7 +213,7 @@ class GameViewModel : ViewModel() {
         }
     }
 
-    // 7. PARSER PILIHAN AKSI DINAMIS (MEMBUAT TOMBOL CEPAT DI UI)
+    // 7. PARSER PILIHAN AKSI DINAMIS
     private fun extractQuickActions(text: String) {
         val actions = mutableListOf<QuickAction>()
         val lines = text.lines()
@@ -214,12 +223,10 @@ class GameViewModel : ViewModel() {
             val match = tableRowRegex.find(line)
             if (match != null) {
                 val command = match.groupValues[2].trim()
-                val desc = match.groupValues[3].trim()
                 actions.add(QuickAction(label = command, command = command))
             }
         }
 
-        // Fallback tombol default jika tabel tidak terdeteksi
         if (actions.isEmpty()) {
             actions.add(QuickAction("Buka Hero Management", "Buka menu Hero Management dan periksa status hero."))
             actions.add(QuickAction("Bentuk Party Lantai 1", "Bentuk party ekspedisi untuk masuk ke Lantai 1."))
@@ -243,6 +250,8 @@ class GameViewModel : ViewModel() {
                     floorNumber = fNum,
                     title = json.optString("title", "Lantai $fNum"),
                     objectiveType = json.optString("objective", "Annihilation"),
+                    clearCondition = json.optString("clearCondition", "Bantai seluruh monster di area."),
+                    failCondition = json.optString("failCondition", "Seluruh anggota party tewas."),
                     terrainHazard = json.optString("hazard", "Normal"),
                     enemyComposition = json.optString("enemies", "Monster Liar"),
                     timeLimitText = json.optString("time", "4 Jam"),
