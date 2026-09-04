@@ -13,6 +13,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Send
@@ -124,6 +125,7 @@ fun PlayerFormScreen(vm: GameViewModel) {
     var lobbyName by remember { mutableStateOf("Niflheim") }
     var periName by remember { mutableStateOf("Ysel") }
     var diff by remember { mutableStateOf("Abyssal") }
+    var adultMode by remember { mutableStateOf(false) }
 
     var isCustomHero by remember { mutableStateOf(true) }
     var heroName by remember { mutableStateOf("Ammora") }
@@ -166,12 +168,20 @@ fun PlayerFormScreen(vm: GameViewModel) {
         }
 
         item {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Checkbox(checked = adultMode, onCheckedChange = { adultMode = it })
+                Text("Aktifkan Mode Dewasa (Private Chamber 20+)", color = Color(0xFFF43F5E), fontSize = 12.sp)
+            }
+        }
+
+        item {
             Button(
                 onClick = {
                     vm.masterName = masterName.trim()
                     vm.lobbyName = lobbyName.trim()
                     vm.assistantName = periName.trim()
                     vm.difficulty = diff.trim()
+                    vm.isAdultModeEnabled = adultMode
                     vm.isCustomHeroActive = isCustomHero
                     vm.customHeroName = heroName.trim()
                     vm.customHeroRace = heroRace.trim()
@@ -189,7 +199,7 @@ fun PlayerFormScreen(vm: GameViewModel) {
 }
 
 // ==========================================
-// LAYAR 3: GAMEPLAY CHAT, PILIHAN AKSI & HERO MANAGEMENT
+// LAYAR 3: GAMEPLAY CHAT, LOBBY & ALL DIALOGS
 // ==========================================
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -200,7 +210,9 @@ fun GamePlayScreen(vm: GameViewModel) {
     val minute by vm.inGameMinute.collectAsState()
     val inventory by vm.inventory.collectAsState()
     val heroRoster by vm.heroRoster.collectAsState()
+    val graveyardRoster by vm.graveyardRoster.collectAsState()
     val discoveredFloors by vm.discoveredFloors.collectAsState()
+    val facilities by vm.facilities.collectAsState()
     val messages by vm.messages.collectAsState()
     val quickActions by vm.quickActions.collectAsState()
     val isGenerating by vm.isGenerating.collectAsState()
@@ -209,6 +221,8 @@ fun GamePlayScreen(vm: GameViewModel) {
     var showInventoryDialog by remember { mutableStateOf(false) }
     var showHeroManagementDialog by remember { mutableStateOf(false) }
     var showTowerIntelDialog by remember { mutableStateOf(false) }
+    var showFacilitiesDialog by remember { mutableStateOf(false) }
+    var showGraveyardDialog by remember { mutableStateOf(false) }
     var selectedHero by remember { mutableStateOf<HeroData?>(null) }
 
     Scaffold(
@@ -217,9 +231,9 @@ fun GamePlayScreen(vm: GameViewModel) {
                 title = {
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                         Text("📅 H-$day | %02d:%02d".format(hour, minute), fontSize = 12.sp, color = Color(0xFF94A3B8))
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Text("💰 ${wallet.gold}", color = Color(0xFFFACC15), fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                            Text("💎 ${wallet.diamond}", color = Color(0xFF38BDF8), fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Text("💰 ${wallet.gold}", color = Color(0xFFFACC15), fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                            Text("💎 ${wallet.diamond}", color = Color(0xFF38BDF8), fontSize = 11.sp, fontWeight = FontWeight.Bold)
                         }
                     }
                 },
@@ -229,6 +243,9 @@ fun GamePlayScreen(vm: GameViewModel) {
                     }
                 },
                 actions = {
+                    IconButton(onClick = { showFacilitiesDialog = true }) {
+                        Icon(Icons.Default.Home, contentDescription = "Fasilitas Lobby", tint = Color(0xFF10B981))
+                    }
                     IconButton(onClick = { showTowerIntelDialog = true }) {
                         Icon(Icons.Default.LocationOn, contentDescription = "Tower Intel", tint = Color(0xFFE11D48))
                     }
@@ -241,7 +258,7 @@ fun GamePlayScreen(vm: GameViewModel) {
         },
         bottomBar = {
             Column(modifier = Modifier.background(Color(0xFF12141C)).padding(8.dp)) {
-                // BILAH TOMBOL CEPAT (DARI TABEL PILIHAN AKSI AI)
+                // Bilah Tombol Cepat Dinamis
                 if (quickActions.isNotEmpty()) {
                     Row(
                         modifier = Modifier
@@ -265,7 +282,7 @@ fun GamePlayScreen(vm: GameViewModel) {
                     }
                 }
 
-                // INPUT CHAT MASTER
+                // Kolom Input Perintah Master
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     OutlinedTextField(
                         value = inputText,
@@ -318,6 +335,95 @@ fun GamePlayScreen(vm: GameViewModel) {
         }
     }
 
+    // 🏰 MODAL FASILITAS LOBBY
+    if (showFacilitiesDialog) {
+        AlertDialog(
+            onDismissRequest = { showFacilitiesDialog = false },
+            confirmButton = { TextButton(onClick = { showFacilitiesDialog = false }) { Text("Tutup", color = Color(0xFF38BDF8)) } },
+            title = { Text("🏰 FASILITAS LOBBY NIFLHEIM", color = Color(0xFF10B981), fontWeight = FontWeight.Bold) },
+            text = {
+                LazyColumn(modifier = Modifier.height(360.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    item {
+                        Card(colors = CardDefaults.cardColors(containerColor = Color(0xFF1E293B)), modifier = Modifier.fillMaxWidth()) {
+                            Column(modifier = Modifier.padding(10.dp)) {
+                                Text("🍲 Iron Bar & Kitchen (Lv.1)", color = Color(0xFFFACC15), fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                                Text("Pemulihan cepat stamina & mental hero.", color = Color.Gray, fontSize = 10.sp)
+                                Spacer(modifier = Modifier.height(6.dp))
+                                Button(
+                                    onClick = {
+                                        vm.restAtKitchen()
+                                        showFacilitiesDialog = false
+                                    },
+                                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF10B981)),
+                                    modifier = Modifier.fillMaxWidth().height(36.dp)
+                                ) {
+                                    Text("Makan & Istirahat (+8 Jam)", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                }
+                            }
+                        }
+                    }
+
+                    item {
+                        Card(colors = CardDefaults.cardColors(containerColor = Color(0xFF1E293B)), modifier = Modifier.fillMaxWidth()) {
+                            Column(modifier = Modifier.padding(10.dp)) {
+                                Text("⚗️ Alchemist Lab (Lv.1)", color = Color(0xFF06B6D4), fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                                Text("Transmutasi: 5x CM + 500G -> 1x UM (Uncommon)", color = Color.Gray, fontSize = 10.sp)
+                                Spacer(modifier = Modifier.height(6.dp))
+                                Button(
+                                    onClick = {
+                                        vm.transmuteMaterial("CM")
+                                        showFacilitiesDialog = false
+                                    },
+                                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF06B6D4)),
+                                    modifier = Modifier.fillMaxWidth().height(36.dp)
+                                ) {
+                                    Text("Lebur 5 CM -> 1 UM", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                }
+                            }
+                        }
+                    }
+
+                    item {
+                        Card(colors = CardDefaults.cardColors(containerColor = Color(0xFF1E293B)), modifier = Modifier.fillMaxWidth()) {
+                            Column(modifier = Modifier.padding(10.dp)) {
+                                Text("⚔️ Blacksmith & Central Research Lab", color = Color(0xFFE11D48), fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                                Text("Ketik perintah di chat untuk menempa senjata, evolusi class, atau mutasi skill [MAX].", color = Color.Gray, fontSize = 10.sp)
+                            }
+                        }
+                    }
+                }
+            },
+            containerColor = Color(0xFF12141C)
+        )
+    }
+
+    // ⚰️ MODAL KUBURAN HERO (GRAVEYARD)
+    if (showGraveyardDialog) {
+        AlertDialog(
+            onDismissRequest = { showGraveyardDialog = false },
+            confirmButton = { TextButton(onClick = { showGraveyardDialog = false }) { Text("Tutup", color = Color(0xFF38BDF8)) } },
+            title = { Text("⚰️ MONUMEN KUBURAN HERO", color = Color(0xFF94A3B8), fontWeight = FontWeight.Bold) },
+            text = {
+                if (graveyardRoster.isEmpty()) {
+                    Text("Belum ada hero yang gugur. Seluruh pahlawan masih hidup.", color = Color.Gray, fontSize = 12.sp)
+                } else {
+                    LazyColumn(modifier = Modifier.height(300.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        items(graveyardRoster) { deadHero ->
+                            Card(colors = CardDefaults.cardColors(containerColor = Color(0xFF1E293B)), modifier = Modifier.fillMaxWidth()) {
+                                Column(modifier = Modifier.padding(8.dp)) {
+                                    Text("💀 ${deadHero.name} (★${deadHero.stars} Lv.${deadHero.level})", color = Color(0xFFF43F5E), fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                                    Text("Sebab: ${deadHero.causeOfDeath}", color = Color.LightGray, fontSize = 10.sp)
+                                    Text("Rekor Prestasi: ${deadHero.totalKill} Kill | Lantai Tertinggi: ${deadHero.highestFloor}", color = Color.Gray, fontSize = 10.sp)
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            containerColor = Color(0xFF12141C)
+        )
+    }
+
     // 🏰 MODAL INTEL MENARA
     if (showTowerIntelDialog) {
         AlertDialog(
@@ -334,8 +440,9 @@ fun GamePlayScreen(vm: GameViewModel) {
                                 Column(modifier = Modifier.padding(10.dp)) {
                                     Text("Lantai ${fl.floorNumber}: ${fl.title}", color = Color(0xFFFACC15), fontWeight = FontWeight.Bold, fontSize = 13.sp)
                                     Text("🎯 Tipe: ${fl.objectiveType} | ⏱️ ${fl.timeLimitText}", color = Color.White, fontSize = 11.sp)
-                                    Text("⚠️ Bahaya: ${fl.terrainHazard}", color = Color(0xFFF43F5E), fontSize = 11.sp)
-                                    Text("👾 Monster: ${fl.enemyComposition}", color = Color.LightGray, fontSize = 11.sp)
+                                    Text("🏆 Syarat Clear: ${fl.clearCondition}", color = Color(0xFF10B981), fontSize = 10.sp)
+                                    Text("💀 Syarat Gagal: ${fl.failCondition}", color = Color(0xFFF43F5E), fontSize = 10.sp)
+                                    Text("⚠️ Bahaya: ${fl.terrainHazard}", color = Color.LightGray, fontSize = 10.sp)
                                 }
                             }
                         }
@@ -351,7 +458,17 @@ fun GamePlayScreen(vm: GameViewModel) {
         AlertDialog(
             onDismissRequest = { showHeroManagementDialog = false },
             confirmButton = { TextButton(onClick = { showHeroManagementDialog = false }) { Text("Tutup", color = Color(0xFF38BDF8)) } },
-            title = { Text("👥 HERO MANAGEMENT", color = Color(0xFF06B6D4), fontWeight = FontWeight.Bold) },
+            title = {
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                    Text("👥 HERO MANAGEMENT", color = Color(0xFF06B6D4), fontWeight = FontWeight.Bold)
+                    TextButton(onClick = {
+                        showHeroManagementDialog = false
+                        showGraveyardDialog = true
+                    }) {
+                        Text("⚰️ Kuburan", color = Color(0xFF94A3B8), fontSize = 11.sp)
+                    }
+                }
+            },
             text = {
                 LazyColumn(modifier = Modifier.height(380.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     items(heroRoster) { hero ->
@@ -362,17 +479,15 @@ fun GamePlayScreen(vm: GameViewModel) {
                             Column(modifier = Modifier.padding(10.dp)) {
                                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                                     Text("${hero.name} ${hero.tag}", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp)
-                                    Text("★".repeat(hero.stars) + " Lv.${hero.level} (EXP:${hero.exp}/${hero.maxExpNeeded})", color = Color(0xFFFACC15), fontSize = 11.sp)
+                                    Text("★".repeat(hero.stars) + " Lv.${hero.level}/${hero.maxLevelForCurrentStar}", color = Color(0xFFFACC15), fontSize = 11.sp)
                                 }
-                                Text("Class: ${hero.jobClass} | Ras: ${hero.race} (${hero.gender}, ${hero.age}th)", color = Color.Gray, fontSize = 11.sp)
+                                Text("Class: ${hero.jobClass} | Ras: ${hero.race} (Bonus Ras: %.1f%%)".format(hero.totalRacialBonus), color = Color.Gray, fontSize = 10.sp)
                                 Spacer(modifier = Modifier.height(4.dp))
                                 Text("❤️ HP: ${hero.currentHp}/${hero.maxHp}", color = Color(0xFFF43F5E), fontSize = 11.sp)
                                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                                     Text("⚡ Fat: ${hero.fatigue}/100", color = if (hero.fatigue > 60) Color.Red else Color.Green, fontSize = 11.sp)
                                     Text("🧠 Strs: ${hero.stress}/100", color = if (hero.stress > 60) Color.Red else Color.Cyan, fontSize = 11.sp)
                                 }
-                                Spacer(modifier = Modifier.height(2.dp))
-                                Text("🗡️ Equip: ${hero.weapon} | 🛡️ ${hero.armor}", color = Color.LightGray, fontSize = 10.sp)
                             }
                         }
                     }
@@ -382,22 +497,42 @@ fun GamePlayScreen(vm: GameViewModel) {
         )
     }
 
-    // 🔍 DETAIL INSPEKSI HERO
+    // 🔍 DETAIL INSPEKSI HERO & TOMBOL PROMOSI BINTANG
     selectedHero?.let { hero ->
         AlertDialog(
             onDismissRequest = { selectedHero = null },
-            confirmButton = { TextButton(onClick = { selectedHero = null }) { Text("Kembali", color = Color(0xFF38BDF8)) } },
+            confirmButton = {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    if (hero.isMaxLevel) {
+                        Button(
+                            onClick = {
+                                vm.promoteHero(hero)
+                                selectedHero = null
+                            },
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFACC15))
+                        ) {
+                            Text("⭐ Promosi Bintang", color = Color.Black, fontWeight = FontWeight.Bold, fontSize = 11.sp)
+                        }
+                    }
+                    TextButton(onClick = { selectedHero = null }) { Text("Kembali", color = Color(0xFF38BDF8)) }
+                }
+            },
             title = { Text("🔍 DETAIL STAT: ${hero.name}", color = Color(0xFFFACC15), fontWeight = FontWeight.Bold) },
             text = {
                 Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                    Text("💪 Physical ATK : ${hero.physicalAtk}", color = Color.White, fontSize = 12.sp)
-                    Text("🔮 Magic ATK    : ${hero.magicAtk}", color = Color.White, fontSize = 12.sp)
-                    Text("🛡️ P. DEF       : ${hero.pDef}", color = Color.White, fontSize = 12.sp)
-                    Text("✨ M. DEF (Res) : ${hero.mDef}", color = Color.White, fontSize = 12.sp)
-                    Text("💥 Crit Rate    : %.1f%%".format(hero.critRate), color = Color.White, fontSize = 12.sp)
-                    Text("📊 Stat Mentah  : STR:${hero.str} VIT:${hero.vit} AGI:${hero.agi} INT:${hero.intStat} DEX:${hero.dex} LUK:${hero.luck}", color = Color.LightGray, fontSize = 10.sp)
+                    Text("⭐ Grade Bintang : ★${hero.stars} (Max Lv.${hero.maxLevelForCurrentStar})", color = Color(0xFFFACC15), fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    Text("💪 Physical ATK  : ${hero.physicalAtk}", color = Color.White, fontSize = 11.sp)
+                    Text("🔮 Magic ATK     : ${hero.magicAtk}", color = Color.White, fontSize = 11.sp)
+                    Text("🛡️ P. DEF        : ${hero.pDef} | ✨ M. DEF: ${hero.mDef}", color = Color.White, fontSize = 11.sp)
+                    Text("💥 Crit Rate     : %.1f%% | 💨 Dodge: %.1f%%".format(hero.critRate, hero.dodgeRate), color = Color.White, fontSize = 11.sp)
+                    Text("📊 Stat Mentah   : STR:${hero.str} VIT:${hero.vit} AGI:${hero.agi} INT:${hero.intStat} DEX:${hero.dex} LUK:${hero.luck}", color = Color.LightGray, fontSize = 10.sp)
+                    Text("🗡️ Equipment    : ${hero.weapon} | 🛡️ ${hero.armor}", color = Color.LightGray, fontSize = 10.sp)
                     if (hero.specialTraits.isNotEmpty()) {
-                        Text("🧬 Trait: ${hero.specialTraits.joinToString()}", color = Color(0xFFFACC15), fontSize = 10.sp)
+                        Text("🧬 Trait: ${hero.specialTraits.joinToString()}", color = Color(0xFF06B6D4), fontSize = 10.sp)
+                    }
+                    if (hero.isMaxLevel) {
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text("✅ HERO SIAP NAIK BINTANG DI ALTAR PROMOSI!", color = Color(0xFF10B981), fontSize = 11.sp, fontWeight = FontWeight.Bold)
                     }
                 }
             },
