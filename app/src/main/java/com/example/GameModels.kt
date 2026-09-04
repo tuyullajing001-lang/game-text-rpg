@@ -25,32 +25,40 @@ data class HeroData(
     val race: String = "Manusia",
     val gender: String = "Laki-laki",
     val age: Int = 20,
-    val stars: Int = 1,
+    val stars: Int = 2,
     var level: Int = 1,
     var exp: Int = 0,
-    val jobClass: String = "Novice",
-    val tag: String = "[NONE]",
+    var jobClass: String = "Novice",
+    var tag: String = "[NONE]",
     
-    // Kondisi
-    var currentHp: Int = 100,
-    var maxHp: Int = 100,
-    var fatigue: Int = 0,
-    var stress: Int = 0,
+    // Status Dinamis
+    var currentHp: Int = 1000,
+    var maxHp: Int = 1000,
+    var fatigue: Int = 0, // 0 - 100
+    var stress: Int = 0,  // 0 - 100
     
-    // Stat Mentah
-    val str: Int = 5,
-    val vit: Int = 5,
-    val intStat: Int = 5,
-    val agi: Int = 5,
-    val dex: Int = 5,
-    val luck: Int = 5,
+    // Stat Mentah Dinamis
+    var str: Int = 6,
+    var vit: Int = 6,
+    var intStat: Int = 6,
+    var agi: Int = 6,
+    var dex: Int = 6,
+    var luck: Int = 6,
+    
+    // Equipment Terpasang
+    var weapon: String = "Tanpa Senjata",
+    var armor: String = "Pakaian Biasa",
+    var accessory: String = "Tidak Ada",
+    
+    // Trait Khusus
+    val specialTraits: List<String> = emptyList(),
     
     // Achievement Tracker
     var totalKill: Int = 0,
     var bossKill: Int = 0,
     var highestFloor: Int = 1
 ) {
-    // Rumus Stat Tempur Godot Engine
+    // Rumus Stat Tempur Godot Engine (Terhitung Otomatis)
     val physicalAtk: Int get() = (str * 5) + (dex * 1) + (agi * 1)
     val magicAtk: Int get() = (intStat * 5) + (dex * 2)
     val pDef: Int get() = vit * 3
