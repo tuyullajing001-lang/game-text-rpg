@@ -13,7 +13,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Send
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -37,15 +36,160 @@ class MainActivity : ComponentActivity() {
                     secondary = Color(0xFF06B6D4)
                 )
             ) {
-                GameScreen()
+                AppNavigator()
             }
         }
     }
 }
 
+@Composable
+fun AppNavigator(vm: GameViewModel = viewModel()) {
+    val stage by vm.currentStage.collectAsState()
+
+    when (stage) {
+        GameStage.API_KEY_SETUP -> ApiKeySetupScreen(vm)
+        GameStage.PLAYER_FORM -> PlayerFormScreen(vm)
+        GameStage.IN_GAME -> GamePlayScreen(vm)
+    }
+}
+
+// ==========================================
+// LAYAR 1: KONEKSI API KEY GOOGLE STUDIO
+// ==========================================
+@Composable
+fun ApiKeySetupScreen(vm: GameViewModel) {
+    var apiKey by remember { mutableStateOf("") }
+    val isConnecting by vm.isConnecting.collectAsState()
+    val errorMsg by vm.connectionError.collectAsState()
+
+    Box(
+        modifier = Modifier.fillMaxSize().background(Color(0xFF090A0F)).padding(24.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(containerColor = Color(0xFF12141C)),
+            shape = RoundedCornerShape(16.dp)
+        ) {
+            Column(modifier = Modifier.padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                Text("⚔️ INFINITE GACHA", color = Color(0xFFE11D48), fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                Text("MOBIUS DIMENSION ENGINE", color = Color(0xFF06B6D4), fontSize = 12.sp)
+                Spacer(modifier = Modifier.height(16.dp))
+
+                OutlinedTextField(
+                    value = apiKey,
+                    onValueChange = { apiKey = it },
+                    label = { Text("API Key Google Studio") },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = Color.White,
+                        unfocusedTextColor = Color.White
+                    ),
+                    maxLines = 2
+                )
+
+                errorMsg?.let {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text("❌ $it", color = Color.Red, fontSize = 12.sp)
+                }
+
+                Spacer(modifier = Modifier.height(20.dp))
+                Button(
+                    onClick = { vm.testAndConnectApi(apiKey.trim()) },
+                    enabled = !isConnecting,
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE11D48)),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    if (isConnecting) {
+                        CircularProgressIndicator(modifier = Modifier.size(20.dp), color = Color.White, strokeWidth = 2.dp)
+                    } else {
+                        Text("HUBUNGKAN KE AI", fontWeight = FontWeight.Bold)
+                    }
+                }
+            }
+        }
+    }
+}
+
+// ==========================================
+// LAYAR 2: FORMULIR DATA PLAYER & CUSTOM HERO
+// ==========================================
+@Composable
+fun PlayerFormScreen(vm: GameViewModel) {
+    var masterName by remember { mutableStateOf("Ammora") }
+    var lobbyName by remember { mutableStateOf("Niflheim") }
+    var periName by remember { mutableStateOf("Ysel") }
+    var diff by remember { mutableStateOf("Abyssal") }
+
+    var isCustomHero by remember { mutableStateOf(true) }
+    var heroName by remember { mutableStateOf("Ammora") }
+    var heroRace by remember { mutableStateOf("Manusia") }
+    var heroGender by remember { mutableStateOf("Laki-laki") }
+    var heroAge by remember { mutableStateOf("28") }
+
+    LazyColumn(
+        modifier = Modifier.fillMaxSize().background(Color(0xFF090A0F)).padding(20.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        item {
+            Text("📜 FORMULIR INISIASI MASTER", color = Color(0xFFFACC15), fontWeight = FontWeight.Bold, fontSize = 18.sp)
+            Spacer(modifier = Modifier.height(8.dp))
+            OutlinedTextField(value = masterName, onValueChange = { masterName = it }, label = { Text("Nama Master") }, modifier = Modifier.fillMaxWidth())
+            OutlinedTextField(value = lobbyName, onValueChange = { lobbyName = it }, label = { Text("Nama Lobby") }, modifier = Modifier.fillMaxWidth())
+            OutlinedTextField(value = periName, onValueChange = { periName = it }, label = { Text("Nama Peri Asisten") }, modifier = Modifier.fillMaxWidth())
+            OutlinedTextField(value = diff, onValueChange = { diff = it }, label = { Text("Tingkat Kesulitan (Normal/Hard/Abyssal)") }, modifier = Modifier.fillMaxWidth())
+        }
+
+        item {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Checkbox(checked = isCustomHero, onCheckedChange = { isCustomHero = it })
+                Text("Aktifkan Custom Hero Awal", color = Color.White)
+            }
+        }
+
+        if (isCustomHero) {
+            item {
+                Card(colors = CardDefaults.cardColors(containerColor = Color(0xFF1E293B)), modifier = Modifier.fillMaxWidth()) {
+                    Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text("🧬 DATA CUSTOM HERO", color = Color(0xFF06B6D4), fontWeight = FontWeight.Bold)
+                        OutlinedTextField(value = heroName, onValueChange = { heroName = it }, label = { Text("Nama Hero") }, modifier = Modifier.fillMaxWidth())
+                        OutlinedTextField(value = heroRace, onValueChange = { heroRace = it }, label = { Text("Ras") }, modifier = Modifier.fillMaxWidth())
+                        OutlinedTextField(value = heroGender, onValueChange = { heroGender = it }, label = { Text("Gender") }, modifier = Modifier.fillMaxWidth())
+                        OutlinedTextField(value = heroAge, onValueChange = { heroAge = it }, label = { Text("Usia") }, modifier = Modifier.fillMaxWidth())
+                    }
+                }
+            }
+        }
+
+        item {
+            Button(
+                onClick = {
+                    vm.masterName = masterName.trim()
+                    vm.lobbyName = lobbyName.trim()
+                    vm.assistantName = periName.trim()
+                    vm.difficulty = diff.trim()
+                    vm.isCustomHeroActive = isCustomHero
+                    vm.customHeroName = heroName.trim()
+                    vm.customHeroRace = heroRace.trim()
+                    vm.customHeroGender = heroGender.trim()
+                    vm.customHeroAge = heroAge.toIntOrNull() ?: 20
+                    vm.submitPlayerForm()
+                },
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE11D48)),
+                modifier = Modifier.fillMaxWidth().height(50.dp)
+            ) {
+                Text("BUKA GERBANG & MULAI 5X GACHA", fontWeight = FontWeight.Bold)
+            }
+        }
+    }
+}
+
+// ==========================================
+// LAYAR 3: GAMEPLAY CHAT & HERO MANAGEMENT
+// ==========================================
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun GameScreen(vm: GameViewModel = viewModel()) {
+fun GamePlayScreen(vm: GameViewModel) {
     val wallet by vm.wallet.collectAsState()
     val day by vm.inGameDay.collectAsState()
     val hour by vm.inGameHour.collectAsState()
@@ -57,68 +201,42 @@ fun GameScreen(vm: GameViewModel = viewModel()) {
 
     var inputText by remember { mutableStateOf("") }
     var showInventoryDialog by remember { mutableStateOf(false) }
-    var showHeroDialog by remember { mutableStateOf(false) }
-    var showSettingsDialog by remember { mutableStateOf(false) }
-    var selectedItem by remember { mutableStateOf<ItemData?>(null) }
+    var showHeroManagementDialog by remember { mutableStateOf(false) }
     var selectedHero by remember { mutableStateOf<HeroData?>(null) }
-    var apiKeyInput by remember { mutableStateOf("") }
-    var isModelReady by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
             TopAppBar(
                 title = {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = "📅 H-$day | %02d:%02d".format(hour, minute),
-                            fontSize = 13.sp,
-                            color = Color(0xFF94A3B8)
-                        )
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                        Text("📅 H-$day | %02d:%02d".format(hour, minute), fontSize = 12.sp, color = Color(0xFF94A3B8))
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Text("💰 ${wallet.gold}", color = Color(0xFFFACC15), fontSize = 13.sp, fontWeight = FontWeight.Bold)
-                            Text("💎 ${wallet.diamond}", color = Color(0xFF38BDF8), fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                            Text("💰 ${wallet.gold}", color = Color(0xFFFACC15), fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                            Text("💎 ${wallet.diamond}", color = Color(0xFF38BDF8), fontSize = 12.sp, fontWeight = FontWeight.Bold)
                         }
                     }
                 },
                 navigationIcon = {
-                    IconButton(onClick = { showHeroDialog = true }) {
-                        Icon(Icons.Default.Menu, contentDescription = "Hero Roster", tint = Color(0xFF06B6D4))
+                    IconButton(onClick = { showHeroManagementDialog = true }) {
+                        Icon(Icons.Default.Menu, contentDescription = "Hero Management", tint = Color(0xFF06B6D4))
                     }
                 },
                 actions = {
                     IconButton(onClick = { showInventoryDialog = true }) {
                         Icon(Icons.Default.ShoppingCart, contentDescription = "Inventory", tint = Color(0xFFFACC15))
                     }
-                    IconButton(onClick = { showSettingsDialog = true }) {
-                        Icon(Icons.Default.Settings, contentDescription = "Settings", tint = Color(0xFF94A3B8))
-                    }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFF12141C))
             )
         },
         bottomBar = {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(Color(0xFF12141C))
-                    .padding(8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
+            Row(modifier = Modifier.fillMaxWidth().background(Color(0xFF12141C)).padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
                 OutlinedTextField(
                     value = inputText,
                     onValueChange = { inputText = it },
                     placeholder = { Text("Ketik perintah Master...", color = Color.Gray, fontSize = 13.sp) },
                     modifier = Modifier.weight(1f),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedTextColor = Color.White,
-                        unfocusedTextColor = Color.White,
-                        focusedBorderColor = Color(0xFFE11D48),
-                        unfocusedBorderColor = Color(0xFF232738)
-                    ),
+                    colors = OutlinedTextFieldDefaults.colors(focusedTextColor = Color.White, unfocusedTextColor = Color.White),
                     maxLines = 3
                 )
                 Spacer(modifier = Modifier.width(8.dp))
@@ -141,13 +259,8 @@ fun GameScreen(vm: GameViewModel = viewModel()) {
             }
         }
     ) { padding ->
-        // CHAT CONSOLE
         LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color(0xFF090A0F))
-                .padding(padding)
-                .padding(horizontal = 12.dp, vertical = 8.dp),
+            modifier = Modifier.fillMaxSize().background(Color(0xFF090A0F)).padding(padding).padding(horizontal = 12.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             items(messages) { msg ->
@@ -156,107 +269,45 @@ fun GameScreen(vm: GameViewModel = viewModel()) {
                 val borderColor = if (isUser) Color(0xFF38BDF8) else Color(0xFFE11D48)
 
                 Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .border(1.dp, borderColor.copy(alpha = 0.5f), RoundedCornerShape(8.dp))
-                        .background(bgColor, RoundedCornerShape(8.dp))
-                        .padding(10.dp)
+                    modifier = Modifier.fillMaxWidth().border(1.dp, borderColor.copy(alpha = 0.5f), RoundedCornerShape(8.dp)).background(bgColor, RoundedCornerShape(8.dp)).padding(10.dp)
                 ) {
                     Column {
-                        Text(
-                            text = if (isUser) "👑 MASTER" else "🧚 YSEL / SISTEM",
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = borderColor
-                        )
+                        Text(if (isUser) "👑 MASTER" else "🧚 YSEL / SISTEM", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = borderColor)
                         Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = msg.text,
-                            fontSize = 13.sp,
-                            color = Color(0xFFE2E8F0),
-                            lineHeight = 18.sp
-                        )
+                        Text(msg.text, fontSize = 13.sp, color = Color(0xFFE2E8F0), lineHeight = 18.sp)
                     }
                 }
             }
         }
     }
 
-    // 🎒 MODAL INVENTORY
-    if (showInventoryDialog) {
+    // 👥 MODAL HERO MANAGEMENT (DINAMIS & REAL-TIME)
+    if (showHeroManagementDialog) {
         AlertDialog(
-            onDismissRequest = { showInventoryDialog = false },
-            confirmButton = {
-                TextButton(onClick = { showInventoryDialog = false }) {
-                    Text("Tutup", color = Color(0xFF38BDF8))
-                }
-            },
-            title = { Text("🎒 TAS & INVENTORY", color = Color(0xFFFACC15), fontWeight = FontWeight.Bold) },
+            onDismissRequest = { showHeroManagementDialog = false },
+            confirmButton = { TextButton(onClick = { showHeroManagementDialog = false }) { Text("Tutup", color = Color(0xFF38BDF8)) } },
+            title = { Text("👥 HERO MANAGEMENT", color = Color(0xFF06B6D4), fontWeight = FontWeight.Bold) },
             text = {
-                LazyColumn(modifier = Modifier.height(300.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    items(inventory) { item ->
-                        Card(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable { selectedItem = item },
-                            colors = CardDefaults.cardColors(containerColor = Color(0xFF1E293B))
-                        ) {
-                            Column(modifier = Modifier.padding(8.dp)) {
-                                Text(
-                                    text = item.name,
-                                    color = Color(item.rarity.hexColor),
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 13.sp
-                                )
-                                Text(text = "${item.slotType} | ${item.effectsText}", color = Color.Gray, fontSize = 11.sp)
-                            }
-                        }
-                    }
-                }
-            },
-            containerColor = Color(0xFF12141C)
-        )
-    }
-
-    // 👥 MODAL HERO ROSTER
-    if (showHeroDialog) {
-        AlertDialog(
-            onDismissRequest = { showHeroDialog = false },
-            confirmButton = {
-                TextButton(onClick = { showHeroDialog = false }) {
-                    Text("Tutup", color = Color(0xFF38BDF8))
-                }
-            },
-            title = { Text("👥 ROSTER HERO", color = Color(0xFF06B6D4), fontWeight = FontWeight.Bold) },
-            text = {
-                LazyColumn(modifier = Modifier.height(350.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                LazyColumn(modifier = Modifier.height(380.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     items(heroRoster) { hero ->
                         Card(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable { selectedHero = hero },
+                            modifier = Modifier.fillMaxWidth().clickable { selectedHero = hero },
                             colors = CardDefaults.cardColors(containerColor = Color(0xFF1E293B))
                         ) {
                             Column(modifier = Modifier.padding(10.dp)) {
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween
-                                ) {
-                                    Text(
-                                        "${hero.name} ${hero.tag}",
-                                        color = Color.White,
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 13.sp
-                                    )
-                                    Text("★".repeat(hero.stars) + " Lv.${hero.level}", color = Color(0xFFFACC15), fontSize = 12.sp)
+                                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                    Text("${hero.name} ${hero.tag}", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                                    Text("★".repeat(hero.stars) + " Lv.${hero.level} (EXP:${hero.exp}/${hero.maxExpNeeded})", color = Color(0xFFFACC15), fontSize = 11.sp)
                                 }
-                                Text("Class: ${hero.jobClass} | Ras: ${hero.race}", color = Color.Gray, fontSize = 11.sp)
+                                Text("Class: ${hero.jobClass} | Ras: ${hero.race} (${hero.gender}, ${hero.age}th)", color = Color.Gray, fontSize = 11.sp)
                                 Spacer(modifier = Modifier.height(4.dp))
                                 Text("❤️ HP: ${hero.currentHp}/${hero.maxHp}", color = Color(0xFFF43F5E), fontSize = 11.sp)
                                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                                    Text("⚡ Fatigue: ${hero.fatigue}/100", color = if (hero.fatigue > 60) Color.Red else Color.Green, fontSize = 11.sp)
-                                    Text("🧠 Stress: ${hero.stress}/100", color = if (hero.stress > 60) Color.Red else Color.Cyan, fontSize = 11.sp)
+                                    Text("⚡ Fat: ${hero.fatigue}/100", color = if (hero.fatigue > 60) Color.Red else Color.Green, fontSize = 11.sp)
+                                    Text("🧠 Strs: ${hero.stress}/100", color = if (hero.stress > 60) Color.Red else Color.Cyan, fontSize = 11.sp)
                                 }
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text("🗡️ Equip: ${hero.weapon} | 🛡️ ${hero.armor}", color = Color.LightGray, fontSize = 10.sp)
                             }
                         }
                     }
@@ -270,60 +321,45 @@ fun GameScreen(vm: GameViewModel = viewModel()) {
     selectedHero?.let { hero ->
         AlertDialog(
             onDismissRequest = { selectedHero = null },
-            confirmButton = {
-                TextButton(onClick = { selectedHero = null }) {
-                    Text("Kembali", color = Color(0xFF38BDF8))
-                }
-            },
-            title = { Text("🔍 STATUS LENGKAP: ${hero.name}", color = Color(0xFFFACC15), fontWeight = FontWeight.Bold) },
+            confirmButton = { TextButton(onClick = { selectedHero = null }) { Text("Kembali", color = Color(0xFF38BDF8)) } },
+            title = { Text("🔍 DETAIL STAT: ${hero.name}", color = Color(0xFFFACC15), fontWeight = FontWeight.Bold) },
             text = {
-                Column(modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(3.dp)) {
                     Text("💪 Physical ATK : ${hero.physicalAtk}", color = Color.White, fontSize = 12.sp)
                     Text("🔮 Magic ATK    : ${hero.magicAtk}", color = Color.White, fontSize = 12.sp)
                     Text("🛡️ P. DEF       : ${hero.pDef}", color = Color.White, fontSize = 12.sp)
                     Text("✨ M. DEF (Res) : ${hero.mDef}", color = Color.White, fontSize = 12.sp)
                     Text("💥 Crit Rate    : %.1f%%".format(hero.critRate), color = Color.White, fontSize = 12.sp)
-                    Text("🏆 Total Kill   : ${hero.totalKill} | Boss: ${hero.bossKill}", color = Color.Gray, fontSize = 11.sp)
+                    Text("📊 Stat Mentah  : STR:${hero.str} VIT:${hero.vit} AGI:${hero.agi} INT:${hero.intStat} DEX:${hero.dex} LUK:${hero.luck}", color = Color.LightGray, fontSize = 10.sp)
+                    if (hero.specialTraits.isNotEmpty()) {
+                        Text("🧬 Trait: ${hero.specialTraits.joinToString()}", color = Color(0xFFFACC15), fontSize = 10.sp)
+                    }
                 }
             },
             containerColor = Color(0xFF1E293B)
         )
     }
 
-    // ⚙️ MODAL PENGATURAN & API KEY
-    if (showSettingsDialog || !isModelReady) {
+    // 🎒 MODAL INVENTORY
+    if (showInventoryDialog) {
         AlertDialog(
-            onDismissRequest = { if (isModelReady) showSettingsDialog = false },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        if (apiKeyInput.isNotBlank()) {
-                            vm.initModel(apiKeyInput.trim())
-                            isModelReady = true
-                            showSettingsDialog = false
-                        }
-                    },
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE11D48))
-                ) {
-                    Text("Simpan & Mulai", color = Color.White)
-                }
-            },
-            title = { Text("🔑 SETUP GEMINI API KEY", color = Color(0xFFE11D48), fontWeight = FontWeight.Bold) },
+            onDismissRequest = { showInventoryDialog = false },
+            confirmButton = { TextButton(onClick = { showInventoryDialog = false }) { Text("Tutup", color = Color(0xFF38BDF8)) } },
+            title = { Text("🎒 TAS & INVENTORY", color = Color(0xFFFACC15), fontWeight = FontWeight.Bold) },
             text = {
-                Column {
-                    Text(
-                        "Masukkan API Key Gemini dari Google AI Studio untuk menghubungkan asisten Peri Ysel:",
-                        color = Color.LightGray,
-                        fontSize = 12.sp
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    OutlinedTextField(
-                        value = apiKeyInput,
-                        onValueChange = { apiKeyInput = it },
-                        placeholder = { Text("Tempel API Key di sini...") },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth()
-                    )
+                if (inventory.isEmpty()) {
+                    Text("Tas masih kosong.", color = Color.Gray)
+                } else {
+                    LazyColumn(modifier = Modifier.height(300.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        items(inventory) { item ->
+                            Card(colors = CardDefaults.cardColors(containerColor = Color(0xFF1E293B)), modifier = Modifier.fillMaxWidth()) {
+                                Column(modifier = Modifier.padding(8.dp)) {
+                                    Text(item.name, color = Color(item.rarity.hexColor), fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                                    Text("${item.slotType} | ${item.effectsText}", color = Color.Gray, fontSize = 11.sp)
+                                }
+                            }
+                        }
+                    }
                 }
             },
             containerColor = Color(0xFF12141C)
