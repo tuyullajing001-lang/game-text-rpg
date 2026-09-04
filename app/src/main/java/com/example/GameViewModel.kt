@@ -17,12 +17,12 @@ enum class GameStage {
 
 class GameViewModel : ViewModel() {
 
-    // 1. TAHAP ALUR PERMAINAN
+    // 1. STAGE FLOW GAME
     val currentStage = MutableStateFlow(GameStage.API_KEY_SETUP)
     val connectionError = MutableStateFlow<String?>(null)
     val isConnecting = MutableStateFlow(false)
 
-    // 2. STATE GAME & HERO MANAGEMENT
+    // 2. STATE GAME, HERO & TOWER
     val wallet = MutableStateFlow(WalletData())
     val inGameDay = MutableStateFlow(1)
     val inGameHour = MutableStateFlow(8)
@@ -40,16 +40,17 @@ class GameViewModel : ViewModel() {
         )
     )
     val heroRoster = MutableStateFlow<List<HeroData>>(emptyList())
+    val discoveredFloors = MutableStateFlow<Map<Int, FloorData>>(emptyMap())
     val messages = MutableStateFlow<List<ChatMessage>>(emptyList())
     val isGenerating = MutableStateFlow(false)
 
-    // Parameter Formulir Player
+    // Form Player
     var masterName: String = "Ammora"
     var lobbyName: String = "Niflheim"
     var assistantName: String = "Ysel"
     var difficulty: String = "Abyssal"
 
-    // Parameter Formulir Custom Hero
+    // Form Custom Hero
     var isCustomHeroActive: Boolean = false
     var customHeroName: String = "Ammora"
     var customHeroRace: String = "Manusia"
@@ -58,7 +59,7 @@ class GameViewModel : ViewModel() {
 
     private var generativeModel: GenerativeModel? = null
 
-    // 3. VALIDASI & KONEKSI KE GEMINI API MENGGUNAKAN GEMINI 3.7 FLASH
+    // 3. KONEKSI KE GEMINI 3.7 FLASH
     fun testAndConnectApi(apiKey: String, modelName: String = "gemini-3.7-flash") {
         if (apiKey.isBlank()) {
             connectionError.value = "API Key tidak boleh kosong!"
@@ -70,11 +71,7 @@ class GameViewModel : ViewModel() {
 
         viewModelScope.launch {
             try {
-                val tempModel = GenerativeModel(
-                    modelName = modelName,
-                    apiKey = apiKey
-                )
-                // Ping tes koneksi ringan
+                val tempModel = GenerativeModel(modelName = modelName, apiKey = apiKey)
                 val testPing = tempModel.generateContent("Ketik 'OK' jika terhubung.")
                 if (testPing.text != null) {
                     generativeModel = GenerativeModel(
@@ -82,7 +79,6 @@ class GameViewModel : ViewModel() {
                         apiKey = apiKey,
                         systemInstruction = content { text(buildSystemInstructions()) }
                     )
-                    // Pindah ke formulir data player setelah sukses
                     currentStage.value = GameStage.PLAYER_FORM
                 } else {
                     connectionError.value = "Gagal mendapatkan respon dari server Google AI Studio."
@@ -95,9 +91,8 @@ class GameViewModel : ViewModel() {
         }
     }
 
-    // 4. SUBMIT FORMULIR PLAYER & INISIASI 5X GACHA DIAMOND TUTORIAL
+    // 4. SUBMIT FORM PLAYER
     fun submitPlayerForm() {
-        // Pengecekan Syarat Rahasia Hero Ammora
         val isSecretAmmora = isCustomHeroActive &&
                 masterName.equals("Ammora", ignoreCase = true) &&
                 customHeroName.equals("Ammora", ignoreCase = true)
@@ -114,7 +109,6 @@ class GameViewModel : ViewModel() {
 
         currentStage.value = GameStage.IN_GAME
 
-        // Perintah inisiasi awal ke AI
         val startCommand = """
             Sistem Inisiasi: Buka gerbang dimensi Mobius untuk Master $masterName di Lobby $lobbyName. 
             Jalankan 5x Summon Diamond Tutorial Gratis di Altar Gacha. 
@@ -125,29 +119,36 @@ class GameViewModel : ViewModel() {
         sendMessage(startCommand)
     }
 
-    // 5. MASTER SYSTEM INSTRUCTIONS
+    // 5. MASTER SYSTEM INSTRUCTIONS (AUTONOMOUS CHRONICLER + SEAMLESS LOCKING)
     private fun buildSystemInstructions(): String {
         return """
             MASTER PROMPT - INFINITE GACHA (v3.2) & GODOT 4 COMBAT ENGINE
             1. BAHASA & GAYA CERITA:
-               - Semua narasi, dialog, dan deskripsi pertarungan WAJIB menggunakan Bahasa Indonesia yang natural, mendalam, gelap, dan realistis (tanpa sensor luka anatomi).
-               - Pemain murni berperan sebagai Master di ruang komando. Peri ($assistantName) yang menyampaikan komando fisik di Lobby.
+               - Bahasa Indonesia natural, narasi gelap/realistis, tanpa plot armor kecuali trait MC.
+               - Pemain murni berperan sebagai Master di ruang komando. Peri ($assistantName) menyampaikan komando fisik.
             
-            2. ATURAN 5X SUMMON DIAMOND TUTORIAL:
-               - Rate Diamond Summon (RNG 1-1000): ★2 (85%), ★3 (10%), ★4 (4%), ★5 (0.9%), ★6 (0.1%).
+            2. CHRONICLER AUTO-COMBAT & OTONOMI HERO:
+               - Hero bertarung OTOMATIS layaknya orang asli berdasarkan Stat, Skill, Fatigue, dan Stress mereka.
+               - Healer memutuskan sendiri kapan menyembuhkan, Tanker pasang badan, hero panik (Stress >= 60) bisa salah langkah.
+               - BLIND ENTRY & PENGUNCIAN LANTAI SEAMLESS:
+                 Saat lantai baru dimasuki pertama kali, AI melempar dadu generate rincian misi dan WAJIB menguncinya di akhir pesan:
+                 [LOCK_FLOOR: {"floor":1, "title":"Nama Area", "objective":"Annihilation", "hazard":"Bahaya Medan", "enemies":"Daftar Monster", "time":"4 Jam", "isBoss":false}]
+               - REPEAT CLEAR: Jika mengulang lantai yang sudah terkunci, jenis monster & medan 100% SAMA (EXP dipotong 50%).
+               - TRAUMA REACTION: Jika 1 hero mati di pertempuran, Stress seluruh rekan yang masih hidup LANGSUNG +30 poin instan.
             
-            3. DYNAMIC HERO MANAGEMENT & INVENTORY STATE PARSER:
-               Setiap kali ada hero baru lahir, item baru didapat, status hero berubah (naik level, exp bertambah, stat naik, ganti equipment, luka/fatigue/stress), atau uang berubah, WAJIB tuliskan tag di bagian paling akhir pesan:
+            3. DYNAMIC STATE PARSER:
+               Setiap ada perubahan, sertakan tag di paling akhir pesan:
                - [ADD_HERO: {"name":"Nama","race":"Ras","gender":"Gender","age":24,"stars":2,"jobClass":"Novice","tag":"[NONE]","hp":1200,"str":8,"vit":8,"intStat":6,"agi":7,"dex":6,"luck":6,"traits":["Trait1"]}]
                - [UPDATE_HERO: {"name":"NamaHero","level":2,"exp":15,"hp":1300,"maxHp":1300,"fatigue":20,"stress":10,"str":10,"vit":9,"intStat":6,"agi":8,"dex":7,"luck":6,"weapon":"Iron Sword","armor":"Leather Vest"}]
                - [ADD_ITEM: {"name":"Nama Item","rarity":"Rare","slot":"Weapon","stats":"+12 P.ATK","effects":"20% Bleed","description":"..."}]
                - [UPDATE_WALLET: {"gold": 5000, "diamond": 50}]
+               - [LOCK_FLOOR: {"floor": 1, "title": "Nama Area", "objective": "Annihilation", "hazard": "...", "enemies": "...", "time": "4 Jam", "isBoss": false}]
             
             4. TINGKAT KESULITAN: $difficulty Mode aktif.
         """.trimIndent()
     }
 
-    // 6. KIRIM PESAN DENGAN INJEKSI STATE HERO & INVENTORY RESMI (ANTI-HALU)
+    // 6. KIRIM PESAN DENGAN INJEKSI STATE HERO, INVENTORY & INTEL TOWER
     fun sendMessage(userText: String) {
         if (userText.isBlank() || generativeModel == null) return
 
@@ -160,15 +161,18 @@ class GameViewModel : ViewModel() {
 
         viewModelScope.launch {
             try {
-                // Injeksi Catatan State Resmi di Belakang Layar
                 val stateContext = """
-                    [CURRENT_HERO_MANAGEMENT_STATE]
+                    [CURRENT_STATE_INJECTION]
                     Gold: ${wallet.value.gold} | Diamond: ${wallet.value.diamond}
                     Hero Roster:
                     ${heroRoster.value.joinToString("\n") { 
                         "- ${it.name} ${it.tag} (★${it.stars} Lv.${it.level} EXP:${it.exp}/${it.maxExpNeeded}) | HP:${it.currentHp}/${it.maxHp} | Fat:${it.fatigue} Str:${it.stress} | Equip:[${it.weapon}, ${it.armor}] | Stat:[STR:${it.str},VIT:${it.vit},AGI:${it.agi},INT:${it.intStat},DEX:${it.dex},LUK:${it.luck}]"
                     }}
                     Inventory: ${inventory.value.joinToString { it.name }}
+                    Discovered Tower Floors Intel:
+                    ${discoveredFloors.value.values.joinToString("\n") { 
+                        "Lantai ${it.floorNumber} [${it.title}]: Objective=${it.objectiveType}, Hazard=${it.terrainHazard}, Enemies=${it.enemyComposition}"
+                    }}
                     [MASTER_COMMAND]: $userText
                 """.trimIndent()
 
@@ -191,11 +195,34 @@ class GameViewModel : ViewModel() {
         }
     }
 
-    // 7. PARSER TAG DINAMIS (HERO MANAGEMENT, INVENTORY & WALLET)
+    // 7. DYNAMIC STATE PARSER
     private fun parseAndApplyTags(text: String): String {
         var result = text
 
-        // A. Tangkap Hero Baru [ADD_HERO: {...}]
+        // A. Tangkap Penguncian Intel Lantai [LOCK_FLOOR: {...}]
+        val floorRegex = Regex("\\[LOCK_FLOOR:\\s*(\\{.*?\\})\\]")
+        floorRegex.findAll(text).forEach { match ->
+            try {
+                val json = JSONObject(match.groupValues[1])
+                val fNum = json.optInt("floor", 1)
+                val newFloor = FloorData(
+                    floorNumber = fNum,
+                    title = json.optString("title", "Lantai $fNum"),
+                    objectiveType = json.optString("objective", "Annihilation"),
+                    terrainHazard = json.optString("hazard", "Normal"),
+                    enemyComposition = json.optString("enemies", "Monster Liar"),
+                    timeLimitText = json.optString("time", "4 Jam"),
+                    isDiscovered = true,
+                    isBossFloor = json.optBoolean("isBoss", fNum % 10 == 0)
+                )
+                val currentMap = discoveredFloors.value.toMutableMap()
+                currentMap[fNum] = newFloor
+                discoveredFloors.value = currentMap
+            } catch (_: Exception) {}
+        }
+        result = floorRegex.replace(result, "")
+
+        // B. Tangkap Hero Baru [ADD_HERO: {...}]
         val addHeroRegex = Regex("\\[ADD_HERO:\\s*(\\{.*?\\})\\]")
         addHeroRegex.findAll(text).forEach { match ->
             try {
@@ -236,7 +263,7 @@ class GameViewModel : ViewModel() {
         }
         result = addHeroRegex.replace(result, "")
 
-        // B. Update Hero Dinamis di Hero Management [UPDATE_HERO: {...}]
+        // C. Update Hero Dinamis [UPDATE_HERO: {...}]
         val updateHeroRegex = Regex("\\[UPDATE_HERO:\\s*(\\{.*?\\})\\]")
         updateHeroRegex.findAll(text).forEach { match ->
             try {
@@ -272,7 +299,7 @@ class GameViewModel : ViewModel() {
         }
         result = updateHeroRegex.replace(result, "")
 
-        // C. Tangkap Item Baru [ADD_ITEM: {...}]
+        // D. Tangkap Item Baru [ADD_ITEM: {...}]
         val itemRegex = Regex("\\[ADD_ITEM:\\s*(\\{.*?\\})\\]")
         itemRegex.findAll(text).forEach { match ->
             try {
@@ -291,7 +318,7 @@ class GameViewModel : ViewModel() {
         }
         result = itemRegex.replace(result, "")
 
-        // D. Tangkap Perubahan Dompet [UPDATE_WALLET: {...}]
+        // E. Tangkap Perubahan Dompet [UPDATE_WALLET: {...}]
         val walletRegex = Regex("\\[UPDATE_WALLET:\\s*(\\{.*?\\})\\]")
         walletRegex.findAll(text).forEach { match ->
             try {
