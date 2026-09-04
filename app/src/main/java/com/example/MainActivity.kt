@@ -11,6 +11,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.material.icons.filled.ShoppingCart
@@ -79,6 +80,7 @@ fun ApiKeySetupScreen(vm: GameViewModel) {
                 OutlinedTextField(
                     value = apiKey,
                     onValueChange = { apiKey = it },
+                    placeholder = { Text("Tempel API Key Gemini...") },
                     label = { Text("API Key Google Studio") },
                     modifier = Modifier.fillMaxWidth(),
                     colors = OutlinedTextFieldDefaults.colors(
@@ -185,7 +187,7 @@ fun PlayerFormScreen(vm: GameViewModel) {
 }
 
 // ==========================================
-// LAYAR 3: GAMEPLAY CHAT & HERO MANAGEMENT
+// LAYAR 3: GAMEPLAY CLEAN CHAT & TOWER CODEX
 // ==========================================
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -196,12 +198,14 @@ fun GamePlayScreen(vm: GameViewModel) {
     val minute by vm.inGameMinute.collectAsState()
     val inventory by vm.inventory.collectAsState()
     val heroRoster by vm.heroRoster.collectAsState()
+    val discoveredFloors by vm.discoveredFloors.collectAsState()
     val messages by vm.messages.collectAsState()
     val isGenerating by vm.isGenerating.collectAsState()
 
     var inputText by remember { mutableStateOf("") }
     var showInventoryDialog by remember { mutableStateOf(false) }
     var showHeroManagementDialog by remember { mutableStateOf(false) }
+    var showTowerIntelDialog by remember { mutableStateOf(false) }
     var selectedHero by remember { mutableStateOf<HeroData?>(null) }
 
     Scaffold(
@@ -222,6 +226,9 @@ fun GamePlayScreen(vm: GameViewModel) {
                     }
                 },
                 actions = {
+                    IconButton(onClick = { showTowerIntelDialog = true }) {
+                        Icon(Icons.Default.LocationOn, contentDescription = "Tower Intel", tint = Color(0xFFE11D48))
+                    }
                     IconButton(onClick = { showInventoryDialog = true }) {
                         Icon(Icons.Default.ShoppingCart, contentDescription = "Inventory", tint = Color(0xFFFACC15))
                     }
@@ -230,7 +237,11 @@ fun GamePlayScreen(vm: GameViewModel) {
             )
         },
         bottomBar = {
-            Row(modifier = Modifier.fillMaxWidth().background(Color(0xFF12141C)).padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
+            // KOLOM CHAT BERSIH (FULL WIDTH)
+            Row(
+                modifier = Modifier.fillMaxWidth().background(Color(0xFF12141C)).padding(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 OutlinedTextField(
                     value = inputText,
                     onValueChange = { inputText = it },
@@ -281,7 +292,35 @@ fun GamePlayScreen(vm: GameViewModel) {
         }
     }
 
-    // 👥 MODAL HERO MANAGEMENT (DINAMIS & REAL-TIME)
+    // 🏰 MODAL INTEL MENARA
+    if (showTowerIntelDialog) {
+        AlertDialog(
+            onDismissRequest = { showTowerIntelDialog = false },
+            confirmButton = { TextButton(onClick = { showTowerIntelDialog = false }) { Text("Tutup", color = Color(0xFF38BDF8)) } },
+            title = { Text("🏰 INTEL LANTAI MENARA", color = Color(0xFFE11D48), fontWeight = FontWeight.Bold) },
+            text = {
+                if (discoveredFloors.isEmpty()) {
+                    Text("Belum ada lantai yang diintai. Masuk ke lantai baru untuk membuka dan mengunci intel lantai.", color = Color.Gray, fontSize = 12.sp)
+                } else {
+                    LazyColumn(modifier = Modifier.height(350.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        items(discoveredFloors.values.toList().sortedBy { it.floorNumber }) { fl ->
+                            Card(colors = CardDefaults.cardColors(containerColor = Color(0xFF1E293B)), modifier = Modifier.fillMaxWidth()) {
+                                Column(modifier = Modifier.padding(10.dp)) {
+                                    Text("Lantai ${fl.floorNumber}: ${fl.title}", color = Color(0xFFFACC15), fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                                    Text("🎯 Tipe: ${fl.objectiveType} | ⏱️ ${fl.timeLimitText}", color = Color.White, fontSize = 11.sp)
+                                    Text("⚠️ Bahaya: ${fl.terrainHazard}", color = Color(0xFFF43F5E), fontSize = 11.sp)
+                                    Text("👾 Monster: ${fl.enemyComposition}", color = Color.LightGray, fontSize = 11.sp)
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            containerColor = Color(0xFF12141C)
+        )
+    }
+
+    // 👥 MODAL HERO MANAGEMENT
     if (showHeroManagementDialog) {
         AlertDialog(
             onDismissRequest = { showHeroManagementDialog = false },
