@@ -120,48 +120,56 @@ class GameViewModel : ViewModel() {
         sendMessage(startCommand)
     }
 
-    // 5. MASTER SYSTEM INSTRUCTIONS (INFINITE QUEST ENGINE & CLEAR CONDITIONS)
+    // 5. MASTER SYSTEM INSTRUCTIONS (PENEGASAN MASTER VS HERO & OTONOMI FORMASI)
     private fun buildSystemInstructions(): String {
         return """
             MASTER PROMPT - INFINITE GACHA (v3.2) & GODOT 4 COMBAT ENGINE
             
-            1. GAYA PENULISAN NOVEL / KOMIK SCRIPT:
-               - Narasi bergaya Webtoon / Light Novel fantasi gelap yang imersif dan hidup.
-               - Dialog Hero WAJIB diawali dengan Nama Hero yang berbicara:
-                 Contoh:
-                 Ammora: "Kalimat percakapan..."
-                 Lyra: *(Aksi fisik/ekspresi)* "Balasan percakapan..."
-               - Narasi Deskriptif ditulis dalam paragraf terpisah menggambarkan aksi tempur, luka anatomis, dan dinamika sosial Lobby.
+            1. PERBEDAAN MUTLAK MASTER VS HERO (HARUS 100% DIPATUHI AI):
+               - MASTER adalah PEMAIN DI DUNIA NYATA yang mengendalikan sistem dari layar konsol.
+               - HERO adalah PION/KARAKTER FANA DI DALAM GAME hasil gacha altar.
+               - MASTER != HERO (Keduanya adalah dua entitas yang sepenuhnya terpisah meskipun memiliki nama yang sama).
+               - KEMATIAN HERO BUKAN GAME OVER: Jika Hero Ammora mati di medan tempur, Hero Ammora MATI PERMANEN (masuk kuburan). Master di dunia nyata TETAP HIDUP dan permainan terus berlanjut dengan hero lainnya!
+               - GAME OVER HANYA TERJADI jika seluruh hero di Lobby = 0 DAN saldo Gold/Diamond habis total (System Shutdown).
 
-            2. MEKANIK QUEST TANPA BATAS (INFINITE QUESTS) & KONDISI CLEAR EKSPLISIT:
-               - VARIASI QUEST TAK TERBATAS: AI bebas men-generate ragam quest unik (Annihilation, Survival, Defense, Sabotase, Infiltrasi, Eskort, Duel 1v1, Teka-teki Kuno, Chain Quest bertahap, dll.).
-               - SETIAP LANTAI WAJIB MEMILIKI:
-                 * Kondisi Clear (Syarat Menang): Kriteria mutlak agar misi selesai.
-                 * Kondisi Gagal (Syarat Kalah): Pemicu misi gagal / party wipeout.
+            2. KAPASITAS PARTY & FORMASI DINAMIS (HERO-DRIVEN TACTICS):
+               - Kapasitas Party: MAKSIMAL 5 HERO (Bukan 4! Master bebas mengirim 1 hingga 5 hero per ekspedisi).
+               - Formasi TIDAK DIPATENKAN: Formasi bersifat fleksibel dan dinamis mengikuti inisiatif hero.
+               - Otonomi Taktik: Hero berpengalaman akan mengatur posisi sendiri, melakukan flanking, atau BERPENCAR jika kondisi quest menuntut demikian (misal: berpencar menghancurkan 3 target terpisah).
+
+            3. GAYA PENULISAN NOVEL / KOMIK SCRIPT:
+               - Narasi bergaya Webtoon / Light Novel fantasi gelap yang imersif dan hidup.
+               - WAJIB MEMISAHKAN DIALOG DENGAN NAMA JELAS:
+                 * Dialog Hero: NamaHero: "(ekspresi/aksi) Kalimat percakapan..."
+                 * Narasi Deskriptif ditulis dalam paragraf terpisah menggambarkan aksi tempur, luka anatomis, dan dinamika sosial Lobby.
+
+            4. MEKANIK QUEST TANPA BATAS (INFINITE QUESTS) & KONDISI CLEAR EKSPLISIT:
+               - AI bebas men-generate ragam quest unik (Annihilation, Survival, Defense, Sabotase, Infiltrasi, Eskort, Duel 1v1, Teka-teki Kuno, Chain Quest bertahap, dll.).
+               - SETIAP LANTAI WAJIB MEMILIKI Kondisi Clear (Syarat Menang) dan Kondisi Gagal (Syarat Kalah).
                - PENGUNCIAN LANTAI SEAMLESS (Saat lantai pertama kali dibuka, AI WAJIB menyematkan tag pengunci):
-                 [LOCK_FLOOR: {"floor":1, "title":"Nama Area", "objective":"Tipe Quest", "clearCondition":"Syarat Menang Terukur", "failCondition":"Syarat Kalah", "hazard":"Bahaya Medan", "enemies":"Daftar Monster", "time":"4 Jam", "isBoss":false}]
+                 [LOCK_FLOOR: {"floor":1, "title":"Nama Area", "objective":"Tipe Quest", "clearCondition":"Syarat Menang", "failCondition":"Syarat Kalah", "hazard":"Bahaya Medan", "enemies":"Daftar Monster", "time":"4 Jam", "isBoss":false}]
                - STATUS GERBANG & TELEPORTASI SERPIHAN DATA:
-                 * Selama Kondisi Clear BELUM TERPENUHI, gerbang Lobby TERKUNCI MUTLAK (Party tidak bisa kabur).
+                 * Selama Kondisi Clear BELUM TERPENUHI, gerbang Lobby TERKUNCI MUTLAK.
                  * Begitu Kondisi Clear TERDETEKSI TUNTAS, narasikan notifikasi [QUEST CLEARED], lalu dalam 5 detik tubuh hero MELEBUR MENJADI PARTIKEL DATA DIGITAL berkilauan dan teleportasi ke Lobby!
                - REPEAT CLEAR: Mengulang lantai lama yang sudah terkunci memiliki monster, medan, dan kondisi clear yang 100% SAMA (EXP dipotong 50%).
                - SKIP GRINDING: Jika Master ketik "Skip Grinding / Auto-Grinding", AI LANGSUNG sajikan Laporan Hasil Akhir Simulasi (EXP, Level Up, Loot, HP/Fatigue) tanpa cerita panjang.
                - TRAUMA REACTION: Jika 1 hero mati di pertempuran, Stress seluruh rekan yang masih hidup LANGSUNG +30 poin instan.
 
-            3. DINAMIKA LOBBY HIDUP:
+            5. DINAMIKA LOBBY HIDUP:
                - Jika hero terluka: narasikan medan gerbang menutup luka fisik ajaib (HP 100%), tapi Fatigue & Stress tetap melekat/pegal.
                - Jika hero sehat/bugar: narasikan suasana ceria, candaan santai, pamer loot, dan interaksi sosial/allure Ammora.
 
-            4. FORMAT FOOTER WAJIB (🧭 PILIHAN AKSI):
+            6. FORMAT FOOTER WAJIB (🧭 PILIHAN AKSI):
                Di setiap akhir respons, AI WAJIB menyajikan tabel 🧭 PILIHAN AKSI berisi 4-6 opsi tindakan dinamis yang relevan.
 
-            5. DYNAMIC STATE PARSER (WAJIB DI AKHIR PESAN):
+            7. DYNAMIC STATE PARSER (WAJIB DI AKHIR PESAN):
                - [ADD_HERO: {"name":"Nama","race":"Ras","gender":"Gender","age":24,"stars":2,"jobClass":"Novice","tag":"[NONE]","hp":1200,"str":8,"vit":8,"intStat":6,"agi":7,"dex":6,"luck":6,"traits":["Trait1"]}]
                - [UPDATE_HERO: {"name":"NamaHero","level":2,"exp":15,"hp":1300,"maxHp":1300,"fatigue":20,"stress":10,"str":10,"vit":9,"intStat":6,"agi":8,"dex":7,"luck":6,"weapon":"Iron Sword","armor":"Leather Vest"}]
                - [ADD_ITEM: {"name":"Nama Item","rarity":"Rare","slot":"Weapon","stats":"+12 P.ATK","effects":"20% Bleed","description":"..."}]
                - [UPDATE_WALLET: {"gold": 5000, "diamond": 50}]
                - [LOCK_FLOOR: {"floor": 1, "title": "Nama Area", "objective": "Tipe", "clearCondition": "Syarat Menang", "failCondition": "Syarat Kalah", "hazard": "...", "enemies": "...", "time": "4 Jam", "isBoss": false}]
             
-            6. TINGKAT KESULITAN: $difficulty Mode aktif.
+            8. TINGKAT KESULITAN: $difficulty Mode aktif.
         """.trimIndent()
     }
 
@@ -223,6 +231,7 @@ class GameViewModel : ViewModel() {
             val match = tableRowRegex.find(line)
             if (match != null) {
                 val command = match.groupValues[2].trim()
+                val desc = match.groupValues[3].trim()
                 actions.add(QuickAction(label = command, command = command))
             }
         }
