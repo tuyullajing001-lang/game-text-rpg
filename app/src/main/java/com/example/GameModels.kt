@@ -22,7 +22,9 @@ data class ItemData(
 data class FloorData(
     val floorNumber: Int,
     val title: String,
-    val objectiveType: String = "Annihilation", // Annihilation, Survival, Defense, Maze
+    val objectiveType: String = "Bebas", // Annihilation, Survival, Defense, Sabotage, Escort, Maze, dll.
+    val clearCondition: String = "Selesaikan Objektif Utama",
+    val failCondition: String = "Seluruh Party Gugur (HP 0)",
     val terrainHazard: String = "Normal",
     val enemyComposition: String = "Belum Diketahui",
     val timeLimitText: String = "4-6 Jam",
@@ -85,7 +87,7 @@ data class WalletData(
 )
 
 data class ChatMessage(
-    val sender: String, // "USER", "AI", "SYSTEM"
+    val sender: String,
     val text: String,
     val timestamp: Long = System.currentTimeMillis()
 )
