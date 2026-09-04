@@ -19,6 +19,17 @@ data class ItemData(
     val isLocked: Boolean = true
 )
 
+data class FloorData(
+    val floorNumber: Int,
+    val title: String,
+    val objectiveType: String = "Annihilation", // Annihilation, Survival, Defense, Maze
+    val terrainHazard: String = "Normal",
+    val enemyComposition: String = "Belum Diketahui",
+    val timeLimitText: String = "4-6 Jam",
+    val isDiscovered: Boolean = false,
+    val isBossFloor: Boolean = false
+)
+
 data class HeroData(
     val id: String,
     val name: String,
@@ -37,7 +48,7 @@ data class HeroData(
     var fatigue: Int = 0, // 0 - 100
     var stress: Int = 0,  // 0 - 100
     
-    // Stat Mentah Dinamis
+    // Stat Mentah Dinamis (Godot 4 Engine)
     var str: Int = 6,
     var vit: Int = 6,
     var intStat: Int = 6,
@@ -50,15 +61,11 @@ data class HeroData(
     var armor: String = "Pakaian Biasa",
     var accessory: String = "Tidak Ada",
     
-    // Trait Khusus
     val specialTraits: List<String> = emptyList(),
-    
-    // Achievement Tracker
     var totalKill: Int = 0,
     var bossKill: Int = 0,
     var highestFloor: Int = 1
 ) {
-    // Rumus Stat Tempur Godot Engine (Terhitung Otomatis)
     val physicalAtk: Int get() = (str * 5) + (dex * 1) + (agi * 1)
     val magicAtk: Int get() = (intStat * 5) + (dex * 2)
     val pDef: Int get() = vit * 3
@@ -78,7 +85,12 @@ data class WalletData(
 )
 
 data class ChatMessage(
-    val sender: String,
+    val sender: String, // "USER", "AI", "SYSTEM"
     val text: String,
     val timestamp: Long = System.currentTimeMillis()
+)
+
+data class QuickAction(
+    val label: String,
+    val command: String
 )
